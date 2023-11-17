@@ -22,5 +22,5 @@ Da bildbasierte PDFs recht groß werden können, bietet CoverUP zwei Exportopton
 Ob Sie mit einer einzelnen Seite oder einem gesamten Dokument arbeiten, **CoverUP** bietet eine flexible und einfache Lösung für alle Ihre Bedürfnisse zur Schwärzung von PDFs.
 
 ---
-![A screenshot of PDF redaction Software | Ein Screenshot der Softwäre zum Schwärzen von PDF-Dokumenten](https://github.com/digidigital/CoverUP/blob/main/Screenshots/Screenshot.png?raw=true)
+![A screenshot of PDF redaction Software | Ein Screenshot der Softwäre zum Schwärzen von PDF-Dokumenten](https://raw.githubusercontent.com/digidigital/CoverUP/main/Screenshots/CoverUP_screenshot.png)
 
