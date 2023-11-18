@@ -50,7 +50,7 @@ class ImageContainer:
         width, height = self.image.size
         newwidth = int(width * ImageContainer.zoom_factor / 100)
         newheight = int(height * ImageContainer.zoom_factor / 100)
-        self.scaled_image = self.image.resize((newwidth, newheight), resample=Image.NEAREST)
+        self.scaled_image = self.image.resize((newwidth, newheight), resample=Image.LANCZOS)
     
     def undo(self):
         '''Go back in history. Set image to previous image and update scaled image.'''
