@@ -69,7 +69,7 @@ class ImageContainer:
     def jpg(self, image_quality=85, scale=1):
         '''Return bytes of compressed image'''
         with io.BytesIO() as output:
-            image_to_save = self.image if scale==1 else self.image.resize((int(self.image.width * scale), int(self.image.height * scale))) 
+            image_to_save = self.image if scale==1 else self.image.resize((int(self.image.width * scale), int(self.image.height * scale)), resample=Image.LANCZOS) 
             image_to_save.save(output, format='JPEG', quality=image_quality, optimize=True)
             data = output.getvalue()
         return data
