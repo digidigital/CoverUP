@@ -237,7 +237,9 @@ Material Symbols - https://fonts.google.com/icons'''
     inkdrop_white_icon = draw_character(inkdrop_white, fontpath)
     inkdrop_black_icon = draw_character(inkdrop_black, fontpath)
     output_quality = 'high'
-    
+    pointer_cursor = 'arrow' if sg.running_windows() else 'left_ptr'
+    drawing_cursor = 'pencil'
+      
     # Layout definition
     graph_layout =[[sg.Graph(canvas_size=(400, 400), background_color='silver', graph_bottom_left=(0,-400), graph_top_right=(400, 0), expand_x=False, expand_y=False, key='-GRAPH-', enable_events=True, drag_submits=True)]]
 
@@ -353,9 +355,9 @@ Material Symbols - https://fonts.google.com/icons'''
 
                     current_page = 0
                     flip_to_page(current_page)                    
-                    window.set_cursor('arrow')
+                    window.set_cursor(pointer_cursor)
                     window['-PROGRESS-'].update(current_count=0)
-                    window['-GRAPH-'].set_cursor('pencil')
+                    window['-GRAPH-'].set_cursor(drawing_cursor)
                 except Exception as e:
                     window['-PAGE_TOTAL-'].update('0')
                     window['-PROGRESS-'].update(current_count=0)
@@ -439,13 +441,13 @@ Material Symbols - https://fonts.google.com/icons'''
                         out_pdf.output(file_path)
                         
                         window['-PROGRESS-'].update(current_count=0)
-                        window.set_cursor('arrow')
-                        window['-GRAPH-'].set_cursor('pencil')
+                        window.set_cursor(pointer_cursor)
+                        window['-GRAPH-'].set_cursor(drawing_cursor)
                         
                     except Exception as e:                     
                         window['-PROGRESS-'].update(current_count=0)
-                        window.set_cursor('arrow')
-                        window['-GRAPH-'].set_cursor('pencil')  
+                        window.set_cursor(pointer_cursor)
+                        window['-GRAPH-'].set_cursor(drawing_cursor)  
                         sg.popup('Ooops! An error occurred: ', str(e))
                         
             # Draw on Graph 
