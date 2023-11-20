@@ -1,0 +1,97 @@
+name: coverup
+summary: CoverUP is a simple tool for redacting PDFs
+description: |
+      Users can import PDF documents into CoverUP, which are then converted into images. This
+      conversion process ensures that the text cannot be copied from the document or indexed 
+      without OCR, enhancing the security of your information. In addition, invisible layers 
+      within the PDF are not converted, providing an extra layer of security against accidental 
+      leaks. CoverUP also supports the import of PNG and JPG files. This is useful if you want
+      to edit screenshots or images of documents taken with a mobile phone. 
+      Given that image-based PDFs can become quite large, CoverUP offers two modes:
+      A high-quality mode that maintains the visual fidelity of the document, and a compressed 
+      mode that reduces file size at the expense of some visual quality.
+version: 0.1.0
+license: GPL-3.0
+grade: stable
+confinement: strict
+architectures: [amd64]
+base: core22
+environment: 
+
+  LD_LIBRARY_PATH: $SNAP/usr/bin/app/usr/lib:$SNAP/usr/bin/app/usr/lib/x86_64-linux-gnu:$SNAP/usr/bin/app/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/gnome-platform/usr7lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
+  PATH: $SNAP/usr/bin/app/usr/bin:/usr/lib/x86_64-linux-gnu:${PATH}
+  PYTHONHOME: $SNAP/usr/bin/app/usr
+  PYTHONPATH: $SNAP/usr/bin/app/usr/lib/python3.10/tkinter:$SNAP/usr/bin/app/usr/lib/python3.10/site-packages
+  TCL_LIBRARY: $SNAP/usr/bin/app/usr/share/tcltk/tcl8.6
+  TK_LIBRARY: $SNAP/usr/bin/app/usr/lib/tcltk/x86_64-linux-gnu/tk8.6
+  TKPATH: $SNAP/usr/bin/app/usr/lib/tcltk/x86_64-linux-gnu/tk8.6
+
+apps:
+  coverup:
+    command: usr/bin/app/AppRun
+    command-chain: [bin/debian-multiarch-triplet-provider-launch, bin/tcltk-launch]
+    desktop: usr/bin/app/coverup.desktop
+    plugs: [home, removable-media, x11, wayland]
+    extensions: [gnome]
+
+parts:
+  tcltk-launch:
+    plugin: nil
+    stage-snaps: [tcltk-launch]
+  
+  debian-multiarch-triplet-provider-launch:
+    plugin: nil
+    stage-snaps: [debian-multiarch-triplet-provider-launch]
+
+  coverup:
+    plugin: nil
+    build-packages: 
+      - wget 
+    stage-packages:  
+      - libx11-6
+      - libxcb-xtest0
+    override-build: |
+      craftctl default
+      APPIMAGE="coverup-0.1.0-x86_64.AppImage"
+      wget https://github.com/digidigital/CoverUP/releases/download/0.1.0/${APPIMAGE}
+      chmod +x ./${APPIMAGE}
+      ./${APPIMAGE} --appimage-extract
+      cd ./squashfs-root
+      #sed -i 's/:\$APPDIR\/lib\/x86_64\//:\$APPDIR\/lib\/x86_64$:\${LD_LIBRARY_PATH}/' ./AppRun.env
+      rm AppRun.env
+
+      echo -E 'APPDIR=$ORIGIN' >> ./AppRun.env
+      echo -E 'APPIMAGE_UUID=KfdZQDP' >> ./AppRun.env
+      echo -E 'APPDIR_EXEC_PATH=$APPDIR/usr/bin/python3.10' >> ./AppRun.env
+      echo -E 'APPDIR_EXEC_ARGS=$APPDIR/usr/src/coverup.py $@' >> ./AppRun.env
+      echo -E 'XDG_DATA_DIRS=$APPDIR/usr/local/share:$APPDIR/usr/share:$XDG_DATA_DIRS' >> ./AppRun.env
+      echo -E 'XDG_CONFIG_DIRS=$APPDIR/etc/xdg:$XDG_CONFIG_DIRS' >> ./AppRun.env
+      echo -E 'APPDIR_LIBRARY_PATH=$APPDIR/usr/lib:$APPDIR/usr/lib/x86_64-linux-gnu:$APPDIR/lib/x86_64-linux-gnu:$APPDIR/lib/x86_64:$SNAP/usr/bin/app/usr/lib:$SNAP/usr/bin/app/usr/lib/x86_64-linux-gnu:$SNAP/usr/bin/app/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/gnome-platform/usr7lib/x86_64-linux-gnu' >> ./AppRun.env
+      echo -E 'PATH=$APPDIR/usr/bin:${PATH}' >> ./AppRun.env
+      echo -E 'GTK_EXE_PREFIX=$APPDIR/usr' >> ./AppRun.env
+      echo -E 'GTK_DATA_PREFIX=$APPDIR/usr' >> ./AppRun.env
+      echo -E 'APPDIR_LIBC_LIBRARY_PATH=$APPDIR/runtime/compat/lib64:$APPDIR/runtime/compat/lib/x86_64-linux-gnu:$APPDIR/runtime/compat/usr/lib/x86_64-linux-gnu:$APPDIR/runtime/compat/usr/lib/x86_64-linux-gnu/gconv' >> ./AppRun.env
+      echo -E 'APPDIR_LIBC_VERSION=2.35' >> ./AppRun.env
+      echo -E 'PYTHONHOME=$APPDIR/usr' >> ./AppRun.env
+      echo -E 'PYTHONPATH=$APPDIR/usr/lib/python3.10/tkinter:$APPDIR/usr/lib/python3.10/site-packages' >> ./AppRun.env
+      echo -E 'TCL_LIBRARY=$APPDIR/usr/share/tcltk/tcl8.6' >> ./AppRun.env
+      echo -E 'TK_LIBRARY=$APPDIR/usr/lib/tcltk/x86_64-linux-gnu/tk8.6' >> ./AppRun.env
+      echo -E 'TKPATH=$APPDIR/usr/lib/tcltk/x86_64-linux-gnu/tk8.6' >> ./AppRun.env
+      echo -E 'APPDIR_PATH_MAPPINGS=/home/bjoern/Dokumente/python_progs/CoverUp/Installer_AppDir-Linux/AppDir:$APPDIR;' >> ./AppRun.env
+      echo -E 'APPDIR_LIBC_LINKER_PATH={'lib64/ld-linux-x86-64.so.2'}' >> ./AppRun.env
+
+      echo -E '[Desktop Entry]' >> coverup.desktop
+      echo -E 'Name=CoverUP' >> coverup.desktop
+      echo -E 'GenericName=PDF Redaction Software' >> coverup.desktop
+      echo -E 'Comment=Overlay PDF with black bars' >> coverup.desktop
+      echo -E 'Exec=coverup' >> coverup.desktop
+      echo -E 'Icon=usr/bin/app/coverup.svg' >> coverup.desktop
+      echo -E 'Terminal=false' >> coverup.desktop
+      echo -E 'Type=Application' >> coverup.desktop
+      echo -E 'Categories=Utility;' >> coverup.desktop
+      echo -E 'StartupNotify=true' >> coverup.desktop  
+           
+      mkdir -p $CRAFT_PART_INSTALL/usr/bin/app
+      mv ./* $CRAFT_PART_INSTALL/usr/bin/app
+      
+
