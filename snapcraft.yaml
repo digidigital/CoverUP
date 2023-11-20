@@ -90,8 +90,12 @@ parts:
       echo -E 'Type=Application' >> coverup.desktop
       echo -E 'Categories=Utility;' >> coverup.desktop
       echo -E 'StartupNotify=true' >> coverup.desktop  
-           
+
+      rm ./runtime/compat/usr/bin/env 
+      rm ./runtime/compat/usr/local/bin/python
+      rm ./runtime/default/usr/bin/env
+      rm ./runtime/default/usr/local/bin/python 
+
       mkdir -p $CRAFT_PART_INSTALL/usr/bin/app
       mv ./* $CRAFT_PART_INSTALL/usr/bin/app
       
-
