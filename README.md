@@ -9,6 +9,12 @@ Given that image-based PDFs can become quite large, **CoverUP** offers two modes
 
 Whether you’re dealing with a single page or an entire document, **CoverUP** provides a flexible and easy solution for all your PDF redaction needs.
 
+Linux users can install the software directly from the snap store:
+
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/coverup)
+
+[Windows Installer and other download options](https://github.com/digidigital/CoverUP/releases/)
+
 ----
 # Schwärzen von PDF Dokumenten mit CoverUP 
 **CoverUP** ist eine kostenlose Software, die in Python entwickelt wurde, um eine sichere und unkomplizierte Methode zur Schwärzung von PDF-Dateien bereitzustellen. Sie ermöglicht es den Benutzern, sensible Textpassagen zu verbergen, indem sie diese mit schwarzen oder weißen Balken überlagern.
@@ -20,6 +26,12 @@ Es unterstützt auch den Import von PNG- und JPG-Dateien, zusätzlich zu PDFs.
 Da bildbasierte PDFs recht groß werden können, bietet CoverUP zwei Exportoptonen an: einen Modus in hoher Qualität, der die visuelle Genauigkeit des Dokuments weitesthegend beibehält, und einen komprimierten Modus, der die Dateigröße auf Kosten von visueller Qualität reduziert.
 
 Ob Sie mit einer einzelnen Seite oder einem gesamten Dokument arbeiten, **CoverUP** bietet eine flexible und einfache Lösung für alle Ihre Bedürfnisse zur Schwärzung von PDFs.
+
+Linux Nutzer können die Software direkt aus dem Snap Store installieren:
+
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/coverup)
+
+[Windows Installer und andere Downloadoptionen](https://github.com/digidigital/CoverUP/releases/)
 
 ---
 ![A screenshot of PDF redaction Software | Ein Screenshot der Softwäre zum Schwärzen von PDF-Dokumenten](https://raw.githubusercontent.com/digidigital/CoverUP/main/Screenshots/CoverUP_screenshot.png)
