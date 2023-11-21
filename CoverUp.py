@@ -254,7 +254,7 @@ if __name__ == "__main__":
         scriptRoot = os.path.dirname(os.path.realpath(__file__))
 
     # Initialize
-    version = "0.2.0"
+    version = "0.2.1"
     about_text="CoverUP " + version + ''' is free software licensed under the terms of the\nGPL V3.0\n
 Visit https://github.com/digidigital/CoverUP or https://coverup.digidigital.de for more information\n
 ©2023 Björn Seipel -> support@digidigital.de\n
@@ -304,7 +304,7 @@ Material Symbols - https://fonts.google.com/icons'''
     drawing_cursor = 'crosshair'
       
     # Layout definition
-    graph_layout =[[sg.Graph(canvas_size=(400, 400), background_color='silver', graph_bottom_left=(0,-400), graph_top_right=(400, 0), expand_x=False, expand_y=False, key='-GRAPH-', enable_events=True, drag_submits=True)]]
+    graph_layout =[[sg.Graph(canvas_size=(2, 2), background_color='silver', graph_bottom_left=(0,-2), graph_top_right=(2, 0), expand_x=False, expand_y=False, key='-GRAPH-', enable_events=True, drag_submits=True)]]
 
     layout = [
         [sg.Push(background_color='gray'),sg.Push(background_color='gray'),sg.Push(background_color='gray'),
@@ -330,9 +330,8 @@ Material Symbols - https://fonts.google.com/icons'''
         sg.Image(draw_character(about, fontpath), key="ABOUT", tooltip='About CoverUP', pad=0, enable_events=True, background_color=image_bg_color),
         sg.Push(background_color='gray'),sg.Push(background_color='gray'),sg.Push(background_color='gray'),
         ],
-        [sg.Column(layout=graph_layout, background_color='silver', size=(800,400), pad=0, expand_x=True, expand_y=True,scrollable=True, sbar_trough_color='lightgrey', sbar_background_color='darkgrey', sbar_relief=sg.RELIEF_RAISED, sbar_arrow_color='silver', key="-GRAPH_COLUMN-")], 
-        [sg.ProgressBar(100, key='-PROGRESS-', orientation='horizontal', bar_color=('green','white'), size_px=(50,5), pad=(0,5), expand_x=True)] 
-        #[sg.Sizegrip(key='SIZEGRIP')]
+        [sg.Column(layout=graph_layout, background_color='silver', size=(2,2), pad=0, expand_x=True, expand_y=True,scrollable=True, sbar_trough_color='lightgrey', sbar_background_color='darkgrey', sbar_relief=sg.RELIEF_RAISED, sbar_arrow_color='silver', key="-GRAPH_COLUMN-")], 
+        [sg.ProgressBar(100, key='-PROGRESS-', orientation='horizontal', bar_color=('green','white'), size_px=(50,5), pad=(0,5), expand_x=True)]     
     ]
         
     sg.theme('LightBlue2') 
