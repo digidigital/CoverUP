@@ -13,7 +13,7 @@ Linux users can install the software directly from the snap store:
 
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/coverup)
 
-[Windows Installer and other download options](https://github.com/digidigital/CoverUP/releases/)
+[Windows Installer and other download options](https://github.com/digidigital/CoverUP/releases/latest)
 
 ----
 # Schwärzen von PDF Dokumenten mit CoverUP 
@@ -31,7 +31,7 @@ Linux Nutzer können die Software direkt aus dem Snap Store installieren:
 
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/coverup)
 
-[Windows Installer und andere Downloadoptionen](https://github.com/digidigital/CoverUP/releases/)
+[Windows Installer und andere Downloadoptionen](https://github.com/digidigital/CoverUP/releases/latest)
 
 ---
 ![A screenshot of PDF redaction Software | Ein Screenshot der Softwäre zum Schwärzen von PDF-Dokumenten](https://raw.githubusercontent.com/digidigital/CoverUP/main/Screenshots/CoverUP_screenshot.png)
