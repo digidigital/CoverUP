@@ -450,13 +450,13 @@ Material Symbols - https://fonts.google.com/icons'''
 
                     current_page = 0
                     flip_to_page(current_page)                    
-                    window.set_cursor(pointer_cursor)
                     window['-PROGRESS-'].update(current_count=0)
-                    window['-GRAPH-'].set_cursor(drawing_cursor)
                 except Exception as e:
                     window['-PAGE_TOTAL-'].update('0')
                     window['-PROGRESS-'].update(current_count=0)
                     sg.popup('Ooops! An Error ocurred:', str(e))
+                window.set_cursor(pointer_cursor)
+                window['-GRAPH-'].set_cursor(drawing_cursor) 
                     
         # Actions to be executed only when images / PDF files have benn loaded                        
         elif images:
