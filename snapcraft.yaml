@@ -53,7 +53,7 @@ parts:
     override-build: |
       craftctl default
       APPIMAGE="coverup-0.2.0-x86_64.AppImage"
-      wget https://github.com/digidigital/CoverUP/releases/download/0.1.0/${APPIMAGE}
+      wget https://github.com/digidigital/CoverUP/releases/download/0.2.0/${APPIMAGE}
       chmod +x ./${APPIMAGE}
       ./${APPIMAGE} --appimage-extract
       cd ./squashfs-root
