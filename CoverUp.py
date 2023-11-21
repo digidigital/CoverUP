@@ -529,7 +529,6 @@ Material Symbols - https://fonts.google.com/icons'''
                                 window['-PROGRESS-'].update(current_count=int(itemcount*100/len(images)))
                                 out_pdf.add_page(format=[item.height_in_pt, item.width_in_pt])
                                 # Original image or resized and compressed?
-                                #include_image = item.image if output_quality == 'high' else item.jpg(image_quality=55, scale=0.85)
                                 include_image = item.finalized_image() if output_quality == 'high' else item.finalized_image('JPEG', image_quality=50, scale=0.80)
                                 out_pdf.image(include_image, x=0, y=0, w=out_pdf.w)
                             
