@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# This is OSS licensed under GPLV3.0
+# (c) 2023 Björn Seipel
 
 import PySimpleGUI as sg
 import pypdfium2 as pdfium
@@ -16,21 +18,22 @@ class ImageContainer:
     
     def __init__(self, image, size=(0,0),  delta_x=0, delta_y=0):
         self.image=image
-        self.size = size
+        self.size = size 
         self.height_in_pt = size[0]
         self.width_in_pt = size[1]
         self.delta_x = delta_x
         self.delta_y = delta_y
         self.scaled_image = self.image
         self.id = None
-        self.history = deque((), maxlen=15)
+        self.rectangles = deque(())
                
     def increase_zoom(self, number=20):
         '''Zoom in image. Returns new zoom_factor'''
         ImageContainer.zoom_factor += number
-        if ImageContainer.zoom_factor > 300:
-            ImageContainer.zoom_factor = 300
-        self.scale_image()     
+        if ImageContainer.zoom_factor > 240:
+            ImageContainer.zoom_factor = 240
+        else:
+            self.scale_image()     
         return [ImageContainer.zoom_factor] 
                
     def decrease_zoom(self, number=20):
@@ -38,13 +41,9 @@ class ImageContainer:
         ImageContainer.zoom_factor -= number
         if ImageContainer.zoom_factor < 20:
             ImageContainer.zoom_factor = 20
-        self.scale_image()
-        return [ImageContainer.zoom_factor, self.data()]
+        else:self.scale_image()
+        return [ImageContainer.zoom_factor]
       
-    def set_image(self, image):
-        '''Set image'''
-        self.image=image
-  
     def scale_image(self):
         '''Scale original size image for display in Graph element.'''
         width, height = self.image.size
@@ -53,23 +52,25 @@ class ImageContainer:
         self.scaled_image = self.image.resize((newwidth, newheight), resample=Image.LANCZOS)
     
     def undo(self):
-        '''Go back in history. Set image to previous image and update scaled image.'''
-        if len(self.history)>0:
-            self.image = self.history.pop()
-            self.scale_image()  
+        '''Go back in history. Remove last rectangle and redraw rectangles.'''
+        if len(self.rectangles)>0:           
+            delete_id=self.rectangles.pop()
+            window['-GRAPH-'].delete_figure(delete_id[3])  
         return self
-    
+     
     def data(self):
         '''Return bytes of scaled image.'''
         with io.BytesIO() as output:
-            self.scaled_image.save(output, format='PNG', optimize=True)
+            self.scaled_image.save(output, format='PNG')
             data = output.getvalue()
-        return data
-    
-    def jpg(self, image_quality=85, scale=1):
+            self.datacache = data
+            
+            return data    
+       
+    def jpg(self, image=None, image_quality=85, scale=1):
         '''Return bytes of compressed image'''
         with io.BytesIO() as output:
-            image_to_save = self.image if scale==1 else self.image.resize((int(self.image.width * scale), int(self.image.height * scale)), resample=Image.LANCZOS) 
+            image_to_save = image if scale==1 else image.resize((int(image.width * scale), int(image.height * scale)), resample=Image.LANCZOS) 
             image_to_save.save(output, format='JPEG', quality=image_quality, optimize=True)
             data = output.getvalue()
         return data
@@ -79,11 +80,46 @@ class ImageContainer:
         self.scale_image()
         return self
     
+    def finalized_image (self, format='PIL', image_quality=100, scale=1):
+        '''Return a copy of the imported image with all the rectangles and in the requested format.'''
+        final_image = self.draw_rectangles_on_image(self.image.copy())
+        if format in ('JPEG','JPG'):
+            return self.jpg(final_image.convert('RGB'), image_quality, scale)
+        else:
+            return final_image
+    
+    def draw_rectangles_on_image(self, image):
+        '''Draw the rectangles in self.rectangles on image'''
+        draw = ImageDraw.Draw(image)
+        for rectangle in self.rectangles:
+            draw.rectangle(xy=[rectangle[0],rectangle[1]], fill=rectangle[2])     
+        return image
+    
+    def draw_rectangles_on_graph(self):
+        '''Draws all rectangles in the rectangles deque to the graph in the correct scale'''
+        new_rectangles= deque (())
+        
+        for rectangle in self.rectangles:
+                factor=ImageContainer.zoom_factor/100
+                scaled_start_point = [int(x * factor) for x in rectangle[0]] 
+                scaled_end_point = [int(x * factor) for x in rectangle[1]] 
+                fill= rectangle[2]
+                factor=ImageContainer.zoom_factor/100
+                               
+                rectangle_id = window['-GRAPH-'].draw_rectangle(
+                    (scaled_start_point[0],-scaled_start_point[1]),
+                    (scaled_end_point[0],-scaled_end_point[1]),
+                    fill_color = fill,
+                    line_color = fill,
+                    line_width = None)
+                
+                new_rectangles.append((rectangle[0], rectangle[1], fill, rectangle_id))
+        
+        self.rectangles = new_rectangles
+                
     def draw_rectangle(self, start_point, end_point, fill='black'):
-        '''Draw a rectangle on image'''
+        '''Draw a rectangle on graph and add it to the rectangles deque'''
         try:
-            self.history.append(deepcopy(self.image)) 
-            draw = ImageDraw.Draw(self.image)
 
             factor=ImageContainer.zoom_factor/100
 
@@ -93,11 +129,18 @@ class ImageContainer:
             computed_endpoint_x = int((end_point[0]-self.delta_x) / factor)
             computed_endpoint_y = int((end_point[1]+self.delta_y) / factor)
             
-            start_point2 = (computed_startpoint_x ,computed_startpoint_y)
-            end_point2 = (computed_endpoint_x ,computed_endpoint_y )
+            start_point_in_original = (computed_startpoint_x ,computed_startpoint_y)
+            end_point_in_original = (computed_endpoint_x ,computed_endpoint_y )
             
-            draw.rectangle([start_point2, end_point2], fill=fill)
-            self.scale_image()   
+            
+            rectangle_id = window['-GRAPH-'].draw_rectangle(
+                        (start_point[0],-start_point[1]),
+                        (end_point[0],-end_point[1]),
+                        fill_color = fill,
+                        line_color = fill,
+                        line_width = None)
+            self.rectangles.append((start_point_in_original, end_point_in_original, fill, rectangle_id))
+            
         except ValueError:
             pass
         return self
@@ -178,7 +221,9 @@ def load_image_to_graph(image, location=(0,0)):
     '''Loads image to Graph element and adjusts position'''
     window['-GRAPH-'].erase()
     id = window['-GRAPH-'].draw_image(data=image.data(), location=location)
+
     scale_graph_to_image(image.scaled_image)
+    image.draw_rectangles_on_graph()
     window['-GRAPH-'].move(image.delta_x, image.delta_y) 
     image.id = id
     return id
@@ -187,6 +232,18 @@ def scale_graph_to_image(image):
     '''Adjust Graph element size to the image (e.g zoom actions)'''
     window['-GRAPH-'].Widget.config(width=image.width, height=image.height)
 
+def toggle_edit_mode(edit_mode='draw'):
+    '''Switch mode and set mouse pointer cursor'''
+    edit_mode='erase' if edit_mode == 'draw' else 'draw'
+    edit_icon = edit_erase_icon if edit_mode == 'erase' else edit_draw_icon
+    if edit_mode == 'erase':
+        drawing_cursor = 'X_cursor'
+    else:
+            drawing_cursor = 'crosshair'
+    window['-GRAPH-'].set_cursor(drawing_cursor)
+    window['EDIT_MODE'].update(data=edit_icon)
+    return edit_mode
+    
 if __name__ == "__main__":
     freeze_support()
 
@@ -197,7 +254,7 @@ if __name__ == "__main__":
         scriptRoot = os.path.dirname(os.path.realpath(__file__))
 
     # Initialize
-    version = "0.1"
+    version = "0.2.0"
     about_text="CoverUP " + version + ''' is free software licensed under the terms of the\nGPL V3.0\n
 Visit https://github.com/digidigital/CoverUP or https://coverup.digidigital.de for more information\n
 ©2023 Björn Seipel -> support@digidigital.de\n
@@ -207,7 +264,8 @@ pypdfium2 - https://github.com/pypdfium2-team/pypdfium2
 pyfpdf2 - https://py-pdf.github.io/fpdf2/
 Pillow - https://python-pillow.org/
 Material Symbols - https://fonts.google.com/icons'''
-    dpi = 115.2/72
+   
+    import_ppi = 150
     pdf = None
     images = []
     fill_color='black'
@@ -225,6 +283,8 @@ Material Symbols - https://fonts.google.com/icons'''
     undo = ''
     about = ''
     marker = ''
+    eraser_off =''
+    eraser =''
     inkdrop_white = ''
     inkdrop_black = ''
     cut = ''
@@ -236,9 +296,12 @@ Material Symbols - https://fonts.google.com/icons'''
     high_quality_icon = draw_character(high_quality, fontpath)
     inkdrop_white_icon = draw_character(inkdrop_white, fontpath)
     inkdrop_black_icon = draw_character(inkdrop_black, fontpath)
+    edit_erase_icon = draw_character(eraser, fontpath)
+    edit_draw_icon = draw_character(eraser_off, fontpath)
     output_quality = 'high'
+    edit_mode = 'draw'
     pointer_cursor = 'arrow' if sg.running_windows() else 'left_ptr'
-    drawing_cursor = 'pencil'
+    drawing_cursor = 'crosshair'
       
     # Layout definition
     graph_layout =[[sg.Graph(canvas_size=(400, 400), background_color='silver', graph_bottom_left=(0,-400), graph_top_right=(400, 0), expand_x=False, expand_y=False, key='-GRAPH-', enable_events=True, drag_submits=True)]]
@@ -250,8 +313,9 @@ Material Symbols - https://fonts.google.com/icons'''
         sg.Image(draw_character(cut, fontpath), key="EXPORT_PAGE", tooltip='Export current page', pad=0, enable_events=True, background_color=image_bg_color),
         sg.Push(background_color='gray'),
         sg.Image(draw_character(undo, fontpath), key='UNDO', tooltip='Revert changes', pad=0, enable_events=True, background_color=image_bg_color),
-        sg.Image(inkdrop_black_icon, key='CHANGE_COLOR', tooltip='Switch marker color black/white', pad=0, enable_events=True, background_color=image_bg_color),
-        sg.Image(high_quality_icon, key='QUALITY', tooltip='Compress output for smaller (low quality) files', pad=0, enable_events=True, background_color=image_bg_color),
+        sg.Image(edit_draw_icon, key="EDIT_MODE", tooltip='Use eraser tool', pad=0, enable_events=True, background_color=image_bg_color),
+        sg.Image(inkdrop_black_icon, key='CHANGE_COLOR', tooltip='Switch marker color black/white', pad=0, enable_events=True, background_color=image_bg_color),       
+        sg.Image(high_quality_icon, key='TOGGLE_QUALITY', tooltip='Compress output for smaller (low quality) files', pad=0, enable_events=True, background_color=image_bg_color),
         sg.Push(background_color='gray'),
         sg.Image(draw_character(left, fontpath), key='BACK', tooltip='Previous page', pad=0, enable_events=True, background_color=image_bg_color),
         sg.Input(visible=False, focus=True),
@@ -301,11 +365,14 @@ Material Symbols - https://fonts.google.com/icons'''
             fill_color='white' if fill_color == 'black' else 'black'
             color_icon = inkdrop_black_icon if fill_color == 'black' else inkdrop_white_icon
             window['CHANGE_COLOR'].update(data=color_icon)
-            
-        elif event == 'QUALITY':
+        
+        elif event == 'TOGGLE_QUALITY':
             output_quality = 'low' if output_quality == 'high' else 'high'             
             quality_icon = low_quality_icon if output_quality == 'low' else high_quality_icon
-            window['QUALITY'].update(data=quality_icon)
+            window['TOGGLE_QUALITY'].update(data=quality_icon)
+        
+        elif event == 'EDIT_MODE':
+            edit_mode = toggle_edit_mode(edit_mode)
                 
         elif event == 'ABOUT':     
             win_loc_x, win_loc_y = window.current_location()
@@ -326,10 +393,9 @@ Material Symbols - https://fonts.google.com/icons'''
                         pdf = pdfium.PdfDocument(file_path)
                         total_pages=len(pdf)
                         window['-PAGE_TOTAL-'].update(total_pages) 
-                        #images = [ImageContainer(pdf[i].render(scale = dpi ).to_pil().convert('RGBA'), pdf[i].get_size()) for i in range(total_pages)]
                         images=[]
                         for i in range(total_pages):          
-                            images.append(ImageContainer(pdf[i].render(scale = dpi).to_pil().convert('RGB'), pdf[i].get_size()))
+                            images.append(ImageContainer(pdf[i].render(scale = int(import_ppi/72)).to_pil(), pdf[i].get_size()))
                             window['-PROGRESS-'].update(current_count=int(i*100/total_pages))
                     
                     # Import single images
@@ -338,18 +404,47 @@ Material Symbols - https://fonts.google.com/icons'''
                         images=[]
                         import_image=Image.open(file_path, mode='r')
                         
-                        # Fit image dpi-wise in DIN A4 format with about 150dpi 
+                        # Fit large images ppi-wise in DIN A4 format with about import_ppi dpi 
                         width, height = import_image.size
-                        if height >= width:                    
-                            scale_factor=1240/width
-                        else:
-                            scale_factor=1754/width
-                        width = width * scale_factor
-                        height = height * scale_factor
-                        width_dpi=int(width/150*72)
-                        height_dpi=int(height/150*72)
                         
-                        images.append(ImageContainer(import_image, (width_dpi,height_dpi)))
+                        a4_short_side = round(8.267 * import_ppi)
+                        a4_long_side = round(11.693 * import_ppi)
+                        
+                        
+                        # Portrait
+                        if height >= width:  
+                            if width/height >= 210/297:                  
+                                # A4 portrait or short side longer
+                                scale_factor= a4_short_side / width
+                            else:  
+                                # A4 portrait long side longer
+                                scale_factor= a4_long_side / height  
+                        
+                        # Landscape
+                        else: 
+                            if width/height >= 297/210:
+                                # A4 landscape or long side longer
+                                scale_factor = a4_long_side / width
+                            else:
+                                # A4 landscape short side longer
+                                scale_factor= a4_short_side / height
+                        
+                        # Scale images larger as A4 at import_ppi only
+                        if scale_factor < 1:        
+                            width = int(width * scale_factor)
+                            height = int(height * scale_factor)
+                            new_image = import_image.resize((width, height), resample=Image.LANCZOS)
+                        else:
+                            new_image = import_image.copy()
+                        
+                        import_image.close()
+                            
+                        # pagesize in ppi @ 72 ppi for pdf output
+                        width_ppi=int(width/import_ppi*72)
+                        height_ppi=int(height/import_ppi*72)
+                        
+                        images.append(ImageContainer(new_image, (width_ppi,height_ppi)))
+                        
                     else:
                         raise Exception ('The file format %s is not supported!' % file_path.split(".").pop())
 
@@ -408,7 +503,7 @@ Material Symbols - https://fonts.google.com/icons'''
                 current_page = flip_to_page(current_page - 1)
             
             elif event == 'UNDO':
-                load_image_to_graph(images[current_page].undo())
+                images[current_page].undo()
                 
             elif event == 'SAVE_PDF' or event == 'EXPORT_PAGE':
                 file_path = sg.PopupGetFile('Save PDF file', no_window=True, save_as=True, file_types = (('PDF', '*.pdf *.PDF'),), default_extension=".pdf")
@@ -425,7 +520,7 @@ Material Symbols - https://fonts.google.com/icons'''
                         if event == 'EXPORT_PAGE':
                             out_pdf.add_page(format=[images[current_page].height_in_pt, images[current_page].width_in_pt])
                             # Original image or resized and compressed?
-                            include_image = images[current_page].image if output_quality == 'high' else images[current_page].jpg(image_quality=55, scale=0.85)
+                            include_image = images[current_page].finalized_image() if output_quality == 'high' else images[current_page].finalized_image('JPEG', image_quality=75, scale=0.90)
                             out_pdf.image(include_image, x=0, y=0, w=out_pdf.w)
                         
                         else:
@@ -435,7 +530,8 @@ Material Symbols - https://fonts.google.com/icons'''
                                 window['-PROGRESS-'].update(current_count=int(itemcount*100/len(images)))
                                 out_pdf.add_page(format=[item.height_in_pt, item.width_in_pt])
                                 # Original image or resized and compressed?
-                                include_image = item.image if output_quality == 'high' else item.jpg(image_quality=55, scale=0.85)
+                                #include_image = item.image if output_quality == 'high' else item.jpg(image_quality=55, scale=0.85)
+                                include_image = item.finalized_image() if output_quality == 'high' else item.finalized_image('JPEG', image_quality=50, scale=0.80)
                                 out_pdf.image(include_image, x=0, y=0, w=out_pdf.w)
                             
                         out_pdf.output(file_path)
@@ -451,10 +547,9 @@ Material Symbols - https://fonts.google.com/icons'''
                         sg.popup('Ooops! An error occurred: ', str(e))
                         
             # Draw on Graph 
-            elif event == '-GRAPH-':
+            elif event == '-GRAPH-' and edit_mode == 'draw':
                 x, y = values['-GRAPH-']
                 y = -y  # Flip y-coordinate
-                
                 # Begin drawing
                 if not drawing:
                     start_point = (x, y)
@@ -463,32 +558,39 @@ Material Symbols - https://fonts.google.com/icons'''
                 # Draw a temporary red rectangle during drawing as position indicator
                 else:
                     try:
-                        end_point = (x, y)
-                        if start_point[0]<end_point[0] and start_point[1]<end_point[1]:                   
-                            try:
-                                window['-GRAPH-'].delete_figure(temp_rectangle)
-                            except:
-                                pass
-                            temp_rectangle = window['-GRAPH-'].draw_rectangle(
-                            (start_point[0],-start_point[1]),
-                            (end_point[0],-end_point[1]),
-                            fill_color = None,
-                            line_color = 'Red',
-                            line_width = 5)
-                            
-                        else:
-                            load_image_to_graph(images[current_page])   
-                             
-                    # Except error that occurs if coordinates are above/right from start coordinates
-                    except ValueError:
+                        window['-GRAPH-'].delete_figure(temp_rectangle)
+                    except:
                         pass
-        
+                    end_point = (x, y)
+                    if start_point[0]<end_point[0] and start_point[1]<end_point[1]:                   
+                        temp_rectangle = window['-GRAPH-'].draw_rectangle(
+                        (start_point[0],-start_point[1]),
+                        (end_point[0],-end_point[1]),
+                        fill_color = 'red',
+                        line_color = 'red',
+                        line_width = None)
+  
             # Conclude drawing             
             elif event == '-GRAPH-+UP' and images:
-                x, y = values['-GRAPH-']
-                y = -y  # Flip y-coordinate
-                end_point = (x, y)
                 drawing = False
-                load_image_to_graph(images[current_page].draw_rectangle(start_point, end_point, fill=fill_color)) 
-    
+                x, y = values['-GRAPH-']
+                
+                if edit_mode == 'draw':
+                    try:
+                        window['-GRAPH-'].delete_figure(temp_rectangle)
+                    except:
+                        pass
+                    if start_point[0]<end_point[0] and start_point[1]<end_point[1]: 
+                        y = -y  # Flip y-coordinate 
+                        end_point = (x, y)                     
+
+                        images[current_page].draw_rectangle(start_point, end_point, fill=fill_color)
+                
+                elif edit_mode == 'erase':
+                    figures = window['-GRAPH-'].get_figures_at_location((x,y))
+                    edit_mode = toggle_edit_mode(edit_mode)
+                    if len(figures) > 1 and len(images[current_page].rectangles) > 0:
+                        window['-GRAPH-'].delete_figure(figures[-1])
+                        images[current_page].rectangles = [item for item in images[current_page].rectangles if item[3] != figures[-1] ]
+                        
     window.close()
