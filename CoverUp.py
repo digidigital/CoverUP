@@ -338,7 +338,7 @@ Material Symbols - https://fonts.google.com/icons'''
     sg.theme('LightBlue2') 
 
     # Create window
-    window = sg.Window('CoverUP', layout, icon=app_icon,element_justification = "center",background_color='grey', size=(1300,900), resizable=True, finalize=True)
+    window = sg.Window('CoverUP', layout, icon=app_icon,element_justification = "center",background_color='grey', size=(1200,800), resizable=True, finalize=True)
 
     # Detect changes of window size
     frame_id = window['-GRAPH_COLUMN-'].Widget.frame_id
