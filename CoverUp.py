@@ -330,7 +330,7 @@ Material Symbols - https://fonts.google.com/icons'''
         sg.Image(draw_character(about, fontpath), key="ABOUT", tooltip='About CoverUP', pad=0, enable_events=True, background_color=image_bg_color),
         sg.Push(background_color='gray'),sg.Push(background_color='gray'),sg.Push(background_color='gray'),
         ],
-        [sg.Column(layout=graph_layout, background_color='silver', size=(800,800), pad=0, expand_x=True, expand_y=True,scrollable=True, sbar_trough_color='lightgrey', sbar_background_color='darkgrey', sbar_relief=sg.RELIEF_RAISED, sbar_arrow_color='silver', key="-GRAPH_COLUMN-")], 
+        [sg.Column(layout=graph_layout, background_color='silver', size=(800,400), pad=0, expand_x=True, expand_y=True,scrollable=True, sbar_trough_color='lightgrey', sbar_background_color='darkgrey', sbar_relief=sg.RELIEF_RAISED, sbar_arrow_color='silver', key="-GRAPH_COLUMN-")], 
         [sg.ProgressBar(100, key='-PROGRESS-', orientation='horizontal', bar_color=('green','white'), size_px=(50,5), pad=(0,5), expand_x=True)] 
         #[sg.Sizegrip(key='SIZEGRIP')]
     ]
@@ -338,7 +338,7 @@ Material Symbols - https://fonts.google.com/icons'''
     sg.theme('LightBlue2') 
 
     # Create window
-    window = sg.Window('CoverUP', layout, icon=app_icon,element_justification = "center",background_color='grey', size=(1300,950), resizable=True, finalize=True)
+    window = sg.Window('CoverUP', layout, icon=app_icon,element_justification = "center",background_color='grey', size=(1300,900), resizable=True, finalize=True)
 
     # Detect changes of window size
     frame_id = window['-GRAPH_COLUMN-'].Widget.frame_id
