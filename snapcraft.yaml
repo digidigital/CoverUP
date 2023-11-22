@@ -10,7 +10,7 @@ description: |
       Given that image-based PDFs can become quite large, CoverUP offers two modes:
       A high-quality mode that maintains the visual fidelity of the document, and a compressed 
       mode that reduces file size at the expense of some visual quality.
-version: 0.2.0
+version: 0.2.1
 license: GPL-3.0
 grade: stable
 confinement: strict
@@ -52,7 +52,7 @@ parts:
       - libxcb-xtest0
     override-build: |
       craftctl default
-      APPIMAGE="coverup-0.2.0-x86_64.AppImage"
+      APPIMAGE="coverup-0.2.1-x86_64.AppImage"
       wget https://github.com/digidigital/CoverUP/releases/download/0.2.0/${APPIMAGE}
       chmod +x ./${APPIMAGE}
       ./${APPIMAGE} --appimage-extract
