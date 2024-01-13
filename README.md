@@ -13,6 +13,8 @@ Linux users can install the software directly from the snap store:
 
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/coverup)
 
+[![coverup](https://snapcraft.io/coverup/badge.svg)](https://snapcraft.io/coverup)
+
 [Windows Installer and other download options](https://github.com/digidigital/CoverUP/releases/latest)
 
 ----
@@ -30,6 +32,8 @@ Ob Sie mit einer einzelnen Seite oder einem gesamten Dokument arbeiten, **CoverU
 Linux Nutzer können die Software direkt aus dem Snap Store installieren:
 
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/coverup)
+
+[![coverup](https://snapcraft.io/coverup/badge.svg)](https://snapcraft.io/coverup)
 
 [Windows Installer und andere Downloadoptionen](https://github.com/digidigital/CoverUP/releases/latest)
 
