@@ -2,7 +2,7 @@
 # This is OSS licensed under GPLV3.0
 # (c) 2024 Björn Seipel
 
-import PySimpleGUI as sg
+import PySimpleGUI_4_60 as sg
 import pypdfium2 as pdfium
 import io, os, sys, re, glob
 from PIL import Image, ImageTk, ImageDraw, ImageFont
@@ -342,7 +342,7 @@ if __name__ == "__main__":
         scriptRoot = os.path.dirname(os.path.realpath(__file__))
 
     # Initialize
-    version = "0.3"
+    version = "0.3.1"
     about_text="CoverUP PDF " + version + '''\nis free software licensed under the terms of the GPL V3.0\n
 Visit https://github.com/digidigital/CoverUP or https://coverup.digidigital.de for more information\n
 ©2024 Björn Seipel -> support@digidigital.de\n
