@@ -13,6 +13,7 @@ import json
 import hashlib
 from appdirs import user_data_dir
 from multiprocessing import freeze_support
+import getopt
 
 class ImageContainer:
     '''Container for images of PDF pages'''
@@ -331,6 +332,40 @@ def toggle_color(fill_color):
     color_icon = inkdrop_black_icon if fill_color == 'black' else inkdrop_white_icon
     window['CHANGE_COLOR'].update(data=color_icon) 
     return fill_color 
+
+progdesc="Redact pdf, jpg and png files"
+
+def usage(desc):
+    '''
+    The usage function
+    '''
+    global fname, site
+    #print(sys.argv[0]+':',  desc, ofname, ifname)
+    print(sys.argv[0], ":", desc, file=sys.stderr)
+    print("Usage: ", sys.argv[0], " [options] [file]", file=sys.stderr)
+    print("Options: ", file=sys.stderr)
+    print("\t-h --help ................ this usage", file=sys.stderr)
+
+#parse command line
+def parsecmd(desc):
+    '''
+    parse command line
+    '''
+    global site, fname
+    try:
+        opts, Names = getopt.getopt(sys.argv[1:], "h", ["help"])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print(str(err), file=sys.stderr) # will print something like "option -a not recognized"
+        usage(desc)
+        sys.exit(2)
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage(desc)
+            sys.exit()
+        else:
+            assert False, "unhandled option"
+    return Names
                       
 if __name__ == "__main__":
     freeze_support()
@@ -340,6 +375,13 @@ if __name__ == "__main__":
         scriptRoot = sys._MEIPASS
     except Exception:
         scriptRoot = os.path.dirname(os.path.realpath(__file__))
+
+    
+    #Read file name from comman line"
+    load_file_path_cmd = parsecmd(progdesc)
+    if load_file_path_cmd: 
+        #we process only the first file
+        load_file_path_cmd = load_file_path_cmd[0]
 
     # Initialize
     version = "0.3.1"
@@ -449,7 +491,12 @@ Material Symbols - https://fonts.google.com/icons'''
 
     while True:
 
-        event, values = window.read()
+        #Handle file defined on commnad line
+        if load_file_path_cmd: 
+            event = "LOAD_PDF"
+            values = {0: '', '-PAGE_NUM-': '', '-GRAPH-': (None, None)}
+        else:
+            event, values = window.read()
 
         if event in (sg.WINDOW_CLOSED, 'EXIT'):
             break
@@ -474,8 +521,13 @@ Material Symbols - https://fonts.google.com/icons'''
             
              
         elif event == 'LOAD_PDF': 
-            save_workfile()      
-            load_file_path = sg.PopupGetFile('Load file',  grab_anywhere = True,
+            # handle file name from command line
+            if load_file_path_cmd:
+                load_file_path = load_file_path_cmd
+                load_file_path_cmd = None
+            else:
+                save_workfile()      
+                load_file_path = sg.PopupGetFile('Load file',  grab_anywhere = True,
         keep_on_top = True, no_window=True, show_hidden=True, file_types = (('All supported', '*.pdf *.PDF *.jpg *.JPG *.png *.PNG'), ('PDF', '*.pdf *.PDF'),('Image', '*.jpg *.JPG *.png *.PNG')),)
              
             if load_file_path:
