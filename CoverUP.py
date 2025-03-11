@@ -13,7 +13,6 @@ import json
 import hashlib
 from appdirs import user_data_dir
 from multiprocessing import freeze_support
-from ipdb import set_trace as trace
 import getopt
 import pytesseract, io
 
@@ -368,6 +367,16 @@ def parsecmd(desc):
         else:
             assert False, "unhandled option"
     return Names
+
+#get window name, depends on the OCR language and file type 
+def get_window_name(path, lang):
+    if not path:
+        return "CoverUp"
+    fname = os.path.split(path)[-1]
+    if path[-3:].lower() == "pdf" :
+        return f"CoverUP (file: {fname} / OCR language: {lang})"
+    else:
+        return f"CoverUp (file: {fname})"
                       
 if __name__ == "__main__":
     freeze_support()
@@ -379,7 +388,7 @@ if __name__ == "__main__":
         scriptRoot = os.path.dirname(os.path.realpath(__file__))
 
     
-    #Read file name from comman line"
+    #Read file name from command line"
     load_file_path_cmd = parsecmd(progdesc)
     if load_file_path_cmd: 
         #we process only the first file
@@ -487,7 +496,8 @@ Material Symbols - https://fonts.google.com/icons'''
     sg.theme('LightBlue2') 
 
     # Create window
-    window = sg.Window('CoverUP PDF', layout, icon=app_icon,element_justification = "center",background_color='grey', size=(1300,900), resizable=True, finalize=True)
+    window_name = get_window_name(load_file_path_cmd, ocr_lang)
+    window = sg.Window(window_name, layout, icon=app_icon,element_justification = "center",background_color='grey', size=(1300,900), resizable=True, finalize=True)
 
     # Detect changes of window size
     frame_id = window['-GRAPH_COLUMN-'].Widget.frame_id
@@ -553,6 +563,7 @@ Material Symbols - https://fonts.google.com/icons'''
                             images.append(ImageContainer(pdf[i].render(scale = int(import_ppi/72)).to_pil(), pdf[i].get_size()))
                             window['-PROGRESS-'].update(current_count=int(i*100/total_pages))
                         file_path = load_file_path
+                        window.TKroot.title(get_window_name(file_path, ocr_lang))
                         
                     # Import single images
                     elif re.search(".*\.(jpg|JPG|png|PNG)$", load_file_path):
@@ -602,6 +613,8 @@ Material Symbols - https://fonts.google.com/icons'''
                         images.append(ImageContainer(new_image, (width_ppi,height_ppi)))
                     
                         file_path = load_file_path    
+                        window_name = f"CoverUP PDF ({file_path})"
+                        window.TKroot.title(get_window_name(file_path, ocr_lang))
                     else:
                         raise Exception ('The file format %s is not supported!' % file_path.split(".").pop())
 
