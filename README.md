@@ -1,11 +1,17 @@
 # CoverUP PDF Redaction Software
-**CoverUP** is a free software, developed in Python, designed to provide a secure and straightforward method for redacting PDF files. It enables users to conceal sensitive text passages by overlaying them with black or white bars.
+**CoverUP** is a free software, developed in Python, designed to provide a secure and straightforward method for redacting PDF files and their optical character recognition (OCR). It enables users to conceal sensitive text passages by overlaying them with black or white bars.
 
 Users can import PDF documents into CoverUP, which are then converted into images. This conversion process ensures that the text cannot be copied from the document or indexed without OCR, enhancing the security of your information. Additionally, invisible layers within the PDF are not converted, providing an extra layer of security.
 
 It also supports the import of PNG and JPG files, in addition to PDFs
 
 Given that image-based PDFs can become quite large, **CoverUP** offers two modes: a high-quality mode that maintains the visual fidelity of the document, and a compressed mode that reduces file size redacted PDF at the expense of some visual quality.
+
+The OCR feature requires that the [Tesseract OCR engine](https://github.com/tesseract-ocr/tesseract) is installed on the system. One can specify OCR language by setting the `COVERUP_OCR_LANG` environment variable, for example by adding the line
+```
+export COVERUP_OCR_LANG=deu
+```
+to the `.bashrc` file if using the `bash` shell. Refer to `tesseract` documentation to get the proper code for your specific language. If not set, the `eng` language is used. Some languages are deu, fra, ces, slk, spa, pol and many others.
 
 Whether you’re dealing with a single page or an entire document, **CoverUP** provides a flexible and easy solution for all your PDF redaction needs.
 

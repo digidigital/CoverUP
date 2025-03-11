@@ -6,14 +6,16 @@ import PySimpleGUI_4_60 as sg
 import pypdfium2 as pdfium
 import io, os, sys, re, glob
 from PIL import Image, ImageTk, ImageDraw, ImageFont
-from fpdf import FPDF
+from PyPDF2 import PdfMerger
 from copy import deepcopy
 from datetime import datetime
 import json
 import hashlib
 from appdirs import user_data_dir
 from multiprocessing import freeze_support
+from ipdb import set_trace as trace
 import getopt
+import pytesseract, io
 
 class ImageContainer:
     '''Container for images of PDF pages'''
@@ -394,6 +396,7 @@ AppDirs - https://github.com/ActiveState/appdirs
 pypdfium2 - https://github.com/pypdfium2-team/pypdfium2
 pyfpdf2 - https://py-pdf.github.io/fpdf2/
 Pillow - https://python-pillow.org/
+pytesseract - https://github.com/madmaze/pytesseract
 Material Symbols - https://fonts.google.com/icons'''
 
     datadir = user_data_dir('CoverUP', 'digidigital')
@@ -444,6 +447,9 @@ Material Symbols - https://fonts.google.com/icons'''
             os.makedirs(datadir)
     except Exception as e:
         pass
+
+    # Load OCR language from environment
+    ocr_lang = os.getenv('COVERUP_OCR_LANG', "eng")
     
     # Layout definition
     graph_layout =[[sg.Graph(canvas_size=(2, 2), background_color='silver', graph_bottom_left=(0,-2), graph_top_right=(2, 0), expand_x=False, expand_y=False, key='-GRAPH-', enable_events=True, drag_submits=True)]]
@@ -665,31 +671,37 @@ Material Symbols - https://fonts.google.com/icons'''
                  
                 if save_file_path: 
                     try:
-                        out_pdf = FPDF(unit="pt")
-                        out_pdf.set_creator('CoverUp PDF ' + version)
-                        out_pdf.set_creation_date(datetime.today()) 
                         window.set_cursor('watch')
                         window['-GRAPH-'].set_cursor('watch')
                         window.refresh()
                                
                         if event == 'EXPORT_PAGE':
-                            out_pdf.add_page(format=[images[current_page].height_in_pt, images[current_page].width_in_pt])
-                            # Original image or resized and compressed?
-                            include_image = images[current_page].finalized_image() if output_quality == 'high' else images[current_page].finalized_image('JPEG', image_quality=75, scale=0.90)
-                            out_pdf.image(include_image, x=0, y=0, w=out_pdf.w)
+                            include_image = images[current_page].finalized_image() if output_quality == 'high' else images[current_page].finalized_image('JPEG', image_quality=75)
+                            pdf = pytesseract.image_to_pdf_or_hocr(include_image, extension='pdf', lang = ocr_lang)
+                            with open(save_file_path, 'w+b') as f:
+                                f.write(pdf) # pdf type is bytes by default
                         
                         else:
-                            itemcount=0
-                            for item in images:
-                                itemcount+=1
-                                window['-PROGRESS-'].update(current_count=int(itemcount*100/len(images)))
-                                out_pdf.add_page(format=[item.height_in_pt, item.width_in_pt])
-                                # Original image or resized and compressed?
-                                include_image = item.finalized_image() if output_quality == 'high' else item.finalized_image('JPEG', image_quality=50, scale=0.80)
-                                out_pdf.image(include_image, x=0, y=0, w=out_pdf.w)
-                            
-                        out_pdf.output(save_file_path)
-                        
+                            pages = []
+                            for itemcount, item in enumerate(images):
+                                window['-PROGRESS-'].update(current_count=int((itemcount+1)*100/len(images)))
+                                include_image = images[itemcount].finalized_image() if output_quality == 'high' else images[current_page].finalized_image('JPEG', image_quality=75)
+                                pdf = pytesseract.image_to_pdf_or_hocr(include_image, extension='pdf', lang = ocr_lang)
+                                pages.append(pdf)
+
+                            #Merge and save
+                            merger = PdfMerger()
+                            for page in pages:
+                                pdf_stream = io.BytesIO(page)  # Convert bytes to a file-like object
+                                merger.append(pdf_stream)
+                            output_stream = io.BytesIO()
+                            merger.write(output_stream)
+                            merger.close()
+
+                            with open(save_file_path, "wb") as f:
+                                merged_pdf_bytes = output_stream.getvalue()  # Get the merged PDF as bytes
+                                f.write(merged_pdf_bytes)
+
                         window['-PROGRESS-'].update(current_count=0)
                         window.set_cursor(pointer_cursor)
                         window['-GRAPH-'].set_cursor(drawing_cursor)
