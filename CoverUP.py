@@ -458,7 +458,7 @@ Material Symbols - https://fonts.google.com/icons'''
         pass
 
     # Load OCR language from environment
-    ocr_lang = os.getenv('COVERUP_OCR_LANG', "eng")
+    ocr_lang = os.getenv('COVERUP_OCR_LANG', "slk")
     
     # Layout definition
     graph_layout =[[sg.Graph(canvas_size=(2, 2), background_color='silver', graph_bottom_left=(0,-2), graph_top_right=(2, 0), expand_x=False, expand_y=False, key='-GRAPH-', enable_events=True, drag_submits=True)]]
