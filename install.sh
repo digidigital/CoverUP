@@ -24,8 +24,7 @@ source $env_dir/bin/activate
 pip install -r requirements.txt
 
 # Create the pdfanon script in /usr/local/bin
-echo "
-#!/bin/bash
+echo "#!/bin/bash
 
 if [ ! -n \"\$1\" ]
 then
