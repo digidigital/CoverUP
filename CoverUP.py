@@ -554,7 +554,7 @@ Material Symbols - https://fonts.google.com/icons'''
                     window['-GRAPH-'].set_cursor('watch')
                     window.refresh()
                     # Import PDF files
-                    if re.search(".*\.(pdf|PDF)$", load_file_path):
+                    if re.search(".*[.](pdf|PDF)$", load_file_path):
                         pdf = pdfium.PdfDocument(load_file_path)
                         total_pages=len(pdf)
                         window['-PAGE_TOTAL-'].update(total_pages) 
@@ -566,7 +566,7 @@ Material Symbols - https://fonts.google.com/icons'''
                         window.TKroot.title(get_window_name(file_path, ocr_lang))
                         
                     # Import single images
-                    elif re.search(".*\.(jpg|JPG|png|PNG)$", load_file_path):
+                    elif re.search(".*[.](jpg|JPG|png|PNG)$", load_file_path):
                         window['-PAGE_TOTAL-'].update(1) 
                         images=[]
                         import_image=Image.open(load_file_path, mode='r')
