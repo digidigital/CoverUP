@@ -679,8 +679,8 @@ Material Symbols - https://fonts.google.com/icons'''
                 images[current_page].undo()
                 
             elif event == 'SAVE_PDF' or event == 'EXPORT_PAGE':
-                 
-                save_file_path = sg.PopupGetFile('Save PDF file', no_window=True, show_hidden=True, keep_on_top=True, save_as=True, file_types = (('PDF', '*.pdf *.PDF'),), default_extension=".pdf")
+                fname = os.path.split(load_file_path)[-1]
+                save_file_path = sg.PopupGetFile('Save PDF file', no_window=True, show_hidden=True, keep_on_top=True, save_as=True, file_types = (('PDF', '*.pdf *.PDF'),), default_extension=".pdf", default_path=fname)
                  
                 if save_file_path: 
                     try:
