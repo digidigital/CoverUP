@@ -1,6 +1,10 @@
 [Desktop Entry]
 Name=PdfAnon
-GenericName=PDF file Anonymization and OCR
+GenericName=PDF editing
+Comment=PDF file Anonymization and OCR
+Name[sk]=PDF Anonymizácia a OCR
+GenericName[sk]=Úprava PDF
+Comment[sk]=Anonymizácia a OCR PDF súborov
 Exec=pdfanon %f
 Icon=pdfanon
 Terminal=false
