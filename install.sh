@@ -33,9 +33,15 @@ then
 fi
 pdf=\$1
 
-path=$PWD
-source \$path/$env_dir/bin/activate
-\$path/CoverUP.py \$pdf
+# go to the file's directory to set the save path correctly
+dir=\`dirname \$pdf\`
+(
+cd \$dir
+
+app_path=$PWD
+source \$app_path/$env_dir/bin/activate
+\$app_path/CoverUP.py \$pdf
+)
 " | sudo tee $pdfanon > /dev/null
 
 sudo chmod 755 $pdfanon
