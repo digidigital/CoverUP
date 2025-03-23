@@ -45,7 +45,7 @@ sudo chmod 755 $pdfanon
 sudo cp pdfanon.desktop /usr/share/applications
 
 #Install the icon
-sudo cp pdfanon.svg /usr/share/icons/hicolor/apps/
+sudo cp pdfanon.svg /usr/share/icons/hicolor/scalable/apps/
 
 sudo update-desktop-database
 sudo gtk-update-icon-cache /usr/share/icons/hicolor/
