@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=PdfAnon
+GenericName=PDF file Anonymization and OCR
+Exec=pdfanon %f
+Icon=pdfanon
+Terminal=false
+Type=Application
+MimeType=application/pdf;
+Categories=Viewer;Graphics;
+NoDisplay=true

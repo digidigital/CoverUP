@@ -40,6 +40,16 @@ source \$path/$env_dir/bin/activate
 
 sudo chmod 755 $pdfanon
 
+#Install the desktop file
+#test functionality: gtk-launch pdfanon 4619198.pdf
+sudo cp pdfanon.desktop /usr/share/applications
+
+#Install the icon
+sudo cp pdfanon.svg /usr/share/icons/hicolor/apps/
+
+sudo update-desktop-database
+sudo gtk-update-icon-cache /usr/share/icons/hicolor/
+
 echo
 echo "$pdfanon has been installed"
 
