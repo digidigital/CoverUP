@@ -544,7 +544,8 @@ Material Symbols - https://fonts.google.com/icons'''
             else:
                 save_workfile()      
                 load_file_path = sg.PopupGetFile('Load file',  grab_anywhere = True,
-        keep_on_top = True, no_window=True, show_hidden=True, file_types = (('All supported', '*.pdf *.PDF *.jpg *.JPG *.png *.PNG'), ('PDF', '*.pdf *.PDF'),('Image', '*.jpg *.JPG *.png *.PNG')),)
+        #keep_on_top = True, no_window=True, show_hidden=True, file_types = (('All supported', '*.pdf *.PDF *.jpg *.JPG *.png *.PNG'), ('PDF', '*.pdf *.PDF'),('Image', '*.jpg *.JPG *.png *.PNG')),)
+        keep_on_top = True, no_window=True, show_hidden=True, file_types = (('All supported', '*.pdf *.PDF'), ('PDF', '*.pdf *.PDF')))
              
             if load_file_path:
                 try:
