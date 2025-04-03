@@ -693,6 +693,7 @@ Material Symbols - https://fonts.google.com/icons'''
                             pdf = pytesseract.image_to_pdf_or_hocr(include_image, extension='pdf', lang = ocr_lang)
                             with open(save_file_path, 'w+b') as f:
                                 f.write(pdf) # pdf type is bytes by default
+                            sg.popup(f"Page {current_page+1} processed and saved to '{save_file_path}'.")
                         
                         else:
                             pages = []
@@ -714,6 +715,7 @@ Material Symbols - https://fonts.google.com/icons'''
                             with open(save_file_path, "wb") as f:
                                 merged_pdf_bytes = output_stream.getvalue()  # Get the merged PDF as bytes
                                 f.write(merged_pdf_bytes)
+                            sg.popup(f"{len(images)} pages processed and saved to '{save_file_path}'.")
 
                         window['-PROGRESS-'].update(current_count=0)
                         window.set_cursor(pointer_cursor)
