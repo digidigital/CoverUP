@@ -1,11 +1,9 @@
 # CoverUP PDF Redaction Software
 **CoverUP** is a free software, developed in Python, designed to provide a secure and straightforward method for redacting PDF files and their optical character recognition (OCR). It enables users to conceal sensitive text passages by overlaying them with black or white bars.
 
+This version is fork of the original work at https://github.com/digidigital/CoverUP. Two major changes are OCR of documents and the possibility to specify name of the document along the program name. This enables to open files in a file manager or from a command line.
+
 Users can import PDF documents into CoverUP, which are then converted into images. This conversion process ensures that the text cannot be copied from the document or indexed without OCR, enhancing the security of your information. Additionally, invisible layers within the PDF are not converted, providing an extra layer of security.
-
-It also supports the import of PNG and JPG files, in addition to PDFs
-
-Given that image-based PDFs can become quite large, **CoverUP** offers two modes: a high-quality mode that maintains the visual fidelity of the document, and a compressed mode that reduces file size redacted PDF at the expense of some visual quality.
 
 The OCR feature requires that the [Tesseract OCR engine](https://github.com/tesseract-ocr/tesseract) is installed on the system. One can specify OCR language by setting the `COVERUP_OCR_LANG` environment variable, for example by adding the line
 ```
@@ -13,36 +11,36 @@ export COVERUP_OCR_LANG=deu
 ```
 to the `.bashrc` file if using the `bash` shell. Refer to `tesseract` documentation to get the proper code for your specific language. If not set, the `eng` language is used. Some languages are deu, fra, ces, slk, spa, pol and many others.
 
-Whether you’re dealing with a single page or an entire document, **CoverUP** provides a flexible and easy solution for all your PDF redaction needs.
+Whether you’re dealing with a single page or an entire document, `CoverUP` provides a flexible and easy solution for all your PDF redaction needs.
 
-Linux users can install the software directly from the snap store:
+Name of the actual app to be used is `pdfanon` on Linux or `pdfanon.exe` on Windows.
 
-[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/coverup)
+## Installation on Linux
+1. Download content of this repository (either using `git` or the provided `zip` file).
+2. Unzip the zip file, if using it
+3. Enter the created directory and run the `install.sh` script. The `pdfanon` script will be placed in the `/usr/local/bin` directory.
 
-[![coverup](https://snapcraft.io/coverup/badge.svg)](https://snapcraft.io/coverup)
+**Comment 1**: do not delete the directory after installation. It contains the code.
 
-[Windows Installer and other download options](https://github.com/digidigital/CoverUP/releases/latest)
+**Comment 2**: If you want to hide the directory by adding . (dot) as the first character of its name, do that prior to running the script.
 
-----
-# Schwärzen von PDF Dokumenten mit CoverUP 
-**CoverUP** ist eine kostenlose Software, die in Python entwickelt wurde, um eine sichere und unkomplizierte Methode zur Schwärzung von PDF-Dateien bereitzustellen. Sie ermöglicht es den Benutzern, sensible Textpassagen zu verbergen, indem sie diese mit schwarzen oder weißen Balken überlagern.
+**Comment 3**: The scitpt was developed on a debian-like system and tested on recent Ubuntu (python 3.12) and older Mint (python 2.8). If you want to use it on e. g. a rpm-based system, you need to do some changes in the script (changing `apt` for `rpm` and perhps other).
 
-Benutzer können PDF-Dokumente in **CoverUP** importieren, die dann in Bilder umgewandelt werden. Dieser Umwandlungsprozess stellt sicher, dass der Text nicht ohne zusätzliche Texterkennung kopiert oder indexiert werden kann, was die Sicherheit der Informationen erhöht. Zusätzlich werden unsichtbare Schichten innerhalb der PDF nicht konvertiert, was eine zusätzliche Sicherheitsebene gegen versehentliche Veröffentlichung bietet.
+## Installation on Windows
+1. Install Python
+1. Install `TesseractOCR`. During installation select the needed languages
+1. Add path to `TeseractOCR` (most likely `C:\Program Files\Tesseract-OCR`) in the `Path` system variable.
+1. Download the `pdfanon.exe` program from (to be specified) and place it somewhere, where the system can find it, e.g. in the `C:\Program Files\Tesseract-OCR` directory.
 
-Es unterstützt auch den Import von PNG- und JPG-Dateien, zusätzlich zu PDFs.
-
-Da bildbasierte PDFs recht groß werden können, bietet CoverUP zwei Exportoptonen an: einen Modus in hoher Qualität, der die visuelle Genauigkeit des Dokuments weitesthegend beibehält, und einen komprimierten Modus, der die Dateigröße der exportierten PDF-Datei auf Kosten von visueller Qualität reduziert.
-
-Ob Sie mit einer einzelnen Seite oder einem gesamten Dokument arbeiten, **CoverUP** bietet eine flexible und einfache Lösung für alle Ihre Bedürfnisse zur Schwärzung von PDFs.
-
-Linux Nutzer können die Software direkt aus dem Snap Store installieren:
-
-[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/coverup)
-
-[![coverup](https://snapcraft.io/coverup/badge.svg)](https://snapcraft.io/coverup)
-
-[Windows Installer und andere Downloadoptionen](https://github.com/digidigital/CoverUP/releases/latest)
-
----
-![A screenshot of PDF redaction Software | Ein Screenshot der Softwäre zum Schwärzen von PDF-Dokumenten](https://raw.githubusercontent.com/digidigital/CoverUP/main/Screenshots/CoverUP_screenshot.png)
-
+## Building the `pdfanon.exe` program
+1. Repeat first three steps of the previous section
+1. Add path to python programs to the `path` system variable (e.g. `C:\Users\username\AppData\Local\Programs\Python\Python312\Scripts`). If set correctly, the `pip` program should be accessible in the `cmd` window.
+1. In a `cmd` window install `pyinstaller` by running `pip install pyinstaller`
+1. Download content of this repository (either using `git` or the provided `zip` file).
+1. Unzip the zip file, if using it
+1. In `cmd` window enter the directory and install dependencies by `pip install -r requirements.txt`
+1. In the same window run
+<code>
+pyinstaller -n pdfanon --add-data "Fonts\MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].ttf":Fonts --onefile --windowed CoverUP.py
+</code>
+The `pdfanon.exe` will be placed in the `dist` subdirectory.
