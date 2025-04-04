@@ -2,6 +2,14 @@
 # This is OSS licensed under GPLV3.0
 # (c) 2024 Björn Seipel
 
+try:
+    import pyi_splash
+    #pyi_splash.update_text('UI Loaded ...')
+    pyi_splash.close()
+except:
+    pass
+
+
 import PySimpleGUI_4_60 as sg
 import pypdfium2 as pdfium
 import io, os, sys, re, glob
