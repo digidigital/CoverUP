@@ -9,7 +9,7 @@ The OCR feature requires that the [Tesseract OCR engine](https://github.com/tess
 ```
 export COVERUP_OCR_LANG=deu
 ```
-to the `.bashrc` file if using the `bash` shell. Refer to `tesseract` documentation to get the proper code for your specific language. If not set, the `eng` language is used. Some languages are deu, fra, ces, slk, spa, pol and many others.
+to the `.bashrc` file if using the `bash` shell or performing an equivalent action on Windows. Refer to `tesseract` documentation to get the proper code for your specific language. If not set, the `eng` language is used. Some languages are deu, fra, ces, slk, spa, pol and many others.
 
 Whether you’re dealing with a single page or an entire document, `CoverUP` provides a flexible and easy solution for all your PDF redaction needs.
 
@@ -28,7 +28,7 @@ Name of the actual app to be used is `pdfanon` on Linux or `pdfanon.exe` on Wind
 
 ## Installation on Windows
 1. Install Python
-1. Install `TesseractOCR`. During installation select the needed languages
+1. Install `TesseractOCR` from https://github.com/UB-Mannheim/tesseract/wiki.  During installation select the needed languages
 1. Add path to `TeseractOCR` (most likely `C:\Program Files\Tesseract-OCR`) in the `Path` system variable.
 1. Download the `pdfanon.exe` program from (to be specified) and place it somewhere, where the system can find it, e.g. in the `C:\Program Files\Tesseract-OCR` directory.
 
@@ -41,6 +41,6 @@ Name of the actual app to be used is `pdfanon` on Linux or `pdfanon.exe` on Wind
 1. In `cmd` window enter the directory and install dependencies by `pip install -r requirements.txt`
 1. In the same window run
 <code>
-pyinstaller -n pdfanon --add-data "Fonts\MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].ttf":Fonts --onefile --windowed CoverUP.py
+pyinstaller --add-data "Fonts\MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].ttf":Fonts --onefile --windowed --splash splash.png -n pdfanon CoverUP.py
 </code>
 The `pdfanon.exe` will be placed in the `dist` subdirectory.
