@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # This is OSS licensed under GPLV3.0
 # (c) 2024 Björn Seipel
+# Modifications (c) Miloš Šrámek
 
 try:
     import pyi_splash
@@ -407,6 +408,7 @@ if __name__ == "__main__":
     about_text="CoverUP PDF " + version + '''\nis free software licensed under the terms of the GPL V3.0\n
 Visit https://github.com/digidigital/CoverUP or https://coverup.digidigital.de for more information\n
 ©2024 Björn Seipel -> support@digidigital.de\n
+©2025 Miloš Šrámek (modifications) 
 OSS Libraries / modules used by this software:
 PySimpleGUI - https://github.com/PySimpleGUI/PySimpleGUI
 AppDirs - https://github.com/ActiveState/appdirs
