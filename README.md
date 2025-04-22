@@ -29,14 +29,14 @@ Installation requires administration rights. If you do not have them, ask the ad
 
 Steps:
 
-1. Install Python
 1. Install `TesseractOCR` from [Github](https://github.com/UB-Mannheim/tesseract/wiki).  During installation select the needed languages
 1. Add path to `TeseractOCR` (most likely `C:\Program Files\Tesseract-OCR`) in the `Path` system variable.
 1. Download the most recent zip file from a [Google Drive folder](https://drive.google.com/drive/folders/14RA-n_7WmSg0xD_fU9nXR7hTFqagBHL5?usp=sharing), extract the `pdfanon.exe` file and place it somewhere, where the system can find it, e.g. in the `C:\Program Files\Tesseract-OCR` directory.
 1. If required, set you default OCR language by setting the `COVERUP_OCR_LANG` environment variable.
 
 ## Building the `pdfanon.exe` program
-1. Repeat first three steps of the previous section
+1. Install Python
+1. Repeat first two steps of the previous section
 1. Add path to python programs to the `path` system variable (e.g. `C:\Users\username\AppData\Local\Programs\Python\Python312\Scripts`). If set correctly, the `pip` program should be accessible in the `cmd` window.
 1. In a `cmd` window install `pyinstaller` by running `pip install pyinstaller`
 1. Download content of this repository (either using `git` or the provided `zip` file).
