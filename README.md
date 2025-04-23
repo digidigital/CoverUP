@@ -30,7 +30,7 @@ Installation requires administration rights. If you do not have them, ask the ad
 Steps:
 
 1. Install `TesseractOCR` from [Github](https://github.com/UB-Mannheim/tesseract/wiki).  During installation select the needed languages
-1. Add path to `TeseractOCR` (most likely `C:\Program Files\Tesseract-OCR`) in the `Path` system variable.
+1. Add path to `TeseractOCR` (most likely `C:\Program Files\Tesseract-OCR`) in the `Path` system variables ([a guide for Windows 11](https://superuser.com/questions/1861276/how-to-set-a-folder-to-the-path-environment-variable-in-windows-11)). 
 1. Download the most recent zip file from a [Google Drive folder](https://drive.google.com/drive/folders/14RA-n_7WmSg0xD_fU9nXR7hTFqagBHL5?usp=sharing), extract the `pdfanon.exe` file and place it somewhere, where the system can find it, e.g. in the `C:\Program Files\Tesseract-OCR` directory.
 1. If required, set you default OCR language by setting the `COVERUP_OCR_LANG` environment variable.
 
