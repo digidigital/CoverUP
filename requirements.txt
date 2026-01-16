@@ -1,0 +1,8 @@
+# CoverUP PDF - Dependencies
+# Install with: pip install -r requirements.txt
+
+FreeSimpleGUI>=5.0.0
+pypdfium2>=4.0.0
+Pillow>=10.0.0
+fpdf2>=2.7.0
+appdirs>=1.4.4

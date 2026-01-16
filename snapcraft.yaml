@@ -1,101 +1,90 @@
 name: coverup
-summary: CoverUP is a simple tool for redacting PDFs
+title: CoverUP PDF
+summary: A simple tool for redacting PDFs and images
 description: |
-      Users can import PDF documents into CoverUP, which are then converted into images. This
-      conversion process ensures that the text cannot be copied from the document or indexed 
-      without OCR, enhancing the security of your information. In addition, invisible layers 
-      within the PDF are not converted, providing an extra layer of security against accidental 
-      leaks. CoverUP also supports the import of PNG and JPG files. This is useful if you want
-      to edit screenshots or images of documents taken with a mobile phone. 
-      Given that image-based PDFs can become quite large, CoverUP offers two export modes:
-      A high-quality mode that maintains the visual fidelity of the document, and a compressed 
-      mode that reduces file size at the expense of some visual quality.
-version: 0.3.0
+  CoverUP is a privacy-focused tool for redacting sensitive information in PDF
+  documents and images. Users can import PDF documents, which are converted into
+  images during the process. This conversion ensures that text cannot be copied
+  or indexed without OCR, enhancing the security of your information.
+
+  Key features:
+  - Import PDF, PNG, and JPG files
+  - Draw black or white redaction bars over sensitive content
+  - Invisible PDF layers are not converted, preventing accidental leaks
+  - High-quality and compressed export modes
+  - Session persistence - continue where you left off
+  - Password-protected PDF support
+  - Command-line file opening support
+
+version: '0.4.0'
 license: GPL-3.0
 grade: stable
 confinement: strict
-architectures: [amd64]
-base: core22
-environment: 
+base: core24
 
-  LD_LIBRARY_PATH: $SNAP/usr/bin/app/usr/lib:$SNAP/usr/bin/app/usr/lib/x86_64-linux-gnu:$SNAP/usr/bin/app/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/gnome-platform/usr7lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
-  PATH: $SNAP/usr/bin/app/usr/bin:/usr/lib/x86_64-linux-gnu:${PATH}
-  PYTHONHOME: $SNAP/usr/bin/app/usr
-  PYTHONPATH: $SNAP/usr/bin/app/usr/lib/python3.10/tkinter:$SNAP/usr/bin/app/usr/lib/python3.10/site-packages
-  TCL_LIBRARY: $SNAP/usr/bin/app/usr/share/tcltk/tcl8.6
-  TK_LIBRARY: $SNAP/usr/bin/app/usr/lib/tcltk/x86_64-linux-gnu/tk8.6
-  TKPATH: $SNAP/usr/bin/app/usr/lib/tcltk/x86_64-linux-gnu/tk8.6
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
 
 apps:
   coverup:
-    command: usr/bin/app/AppRun
-    command-chain: [bin/debian-multiarch-triplet-provider-launch, bin/tcltk-launch]
-    desktop: usr/bin/app/coverup.desktop
-    plugs: [home, removable-media, x11, wayland]
+    command: bin/coverup
+    desktop: share/applications/coverup.desktop
     extensions: [gnome]
+    plugs:
+      - home
+      - removable-media
+      - x11
+      - wayland
+      - desktop
+      - desktop-legacy
 
 parts:
-  tcltk-launch:
-    plugin: nil
-    stage-snaps: [tcltk-launch]
-  
-  debian-multiarch-triplet-provider-launch:
-    plugin: nil
-    stage-snaps: [debian-multiarch-triplet-provider-launch]
-
   coverup:
-    plugin: nil
-    build-packages: 
-      - wget 
-    stage-packages:  
-      - libx11-6
+    plugin: python
+    source: https://github.com/digidigital/CoverUP.git
+    source-type: git
+    source-tag: v0.4.0
+    python-requirements:
+      - requirements.txt
+    stage-packages:
+      - python3-tk
+      - python3-pil
+      - python3-pil.imagetk
       - libxcb-xtest0
+      - libpython3.12-stdlib
+      - libpython3.12-minimal
+    build-packages:
+      - python3-dev
+      - python3-pip
+      - python3-setuptools
+      - python3-venv
     override-build: |
       craftctl default
-      APPIMAGE="coverup-0.3.0-x86_64.AppImage"
-      wget https://github.com/digidigital/CoverUP/releases/download/0.3.0/${APPIMAGE}
-      chmod +x ./${APPIMAGE}
-      ./${APPIMAGE} --appimage-extract
-      cd ./squashfs-root
-      #sed -i 's/:\$APPDIR\/lib\/x86_64\//:\$APPDIR\/lib\/x86_64$:\${LD_LIBRARY_PATH}/' ./AppRun.env
-      rm AppRun.env
 
-      echo -E 'APPDIR=$ORIGIN' >> ./AppRun.env
-      echo -E 'APPIMAGE_UUID=KfdZQDP' >> ./AppRun.env
-      echo -E 'APPDIR_EXEC_PATH=$APPDIR/usr/bin/python3.10' >> ./AppRun.env
-      echo -E 'APPDIR_EXEC_ARGS=$APPDIR/usr/src/coverup.py $@' >> ./AppRun.env
-      echo -E 'XDG_DATA_DIRS=$APPDIR/usr/local/share:$APPDIR/usr/share:$XDG_DATA_DIRS' >> ./AppRun.env
-      echo -E 'XDG_CONFIG_DIRS=$APPDIR/etc/xdg:$XDG_CONFIG_DIRS' >> ./AppRun.env
-      echo -E 'APPDIR_LIBRARY_PATH=$APPDIR/usr/lib:$APPDIR/usr/lib/x86_64-linux-gnu:$APPDIR/lib/x86_64-linux-gnu:$APPDIR/lib/x86_64:$SNAP/usr/bin/app/usr/lib:$SNAP/usr/bin/app/usr/lib/x86_64-linux-gnu:$SNAP/usr/bin/app/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/gnome-platform/usr7lib/x86_64-linux-gnu' >> ./AppRun.env
-      echo -E 'PATH=$APPDIR/usr/bin:${PATH}' >> ./AppRun.env
-      echo -E 'GTK_EXE_PREFIX=$APPDIR/usr' >> ./AppRun.env
-      echo -E 'GTK_DATA_PREFIX=$APPDIR/usr' >> ./AppRun.env
-      echo -E 'APPDIR_LIBC_LIBRARY_PATH=$APPDIR/runtime/compat/lib64:$APPDIR/runtime/compat/lib/x86_64-linux-gnu:$APPDIR/runtime/compat/usr/lib/x86_64-linux-gnu:$APPDIR/runtime/compat/usr/lib/x86_64-linux-gnu/gconv' >> ./AppRun.env
-      echo -E 'APPDIR_LIBC_VERSION=2.35' >> ./AppRun.env
-      echo -E 'PYTHONHOME=$APPDIR/usr' >> ./AppRun.env
-      echo -E 'PYTHONPATH=$APPDIR/usr/lib/python3.10/tkinter:$APPDIR/usr/lib/python3.10/site-packages' >> ./AppRun.env
-      echo -E 'TCL_LIBRARY=$APPDIR/usr/share/tcltk/tcl8.6' >> ./AppRun.env
-      echo -E 'TK_LIBRARY=$APPDIR/usr/lib/tcltk/x86_64-linux-gnu/tk8.6' >> ./AppRun.env
-      echo -E 'TKPATH=$APPDIR/usr/lib/tcltk/x86_64-linux-gnu/tk8.6' >> ./AppRun.env
-      echo -E 'APPDIR_PATH_MAPPINGS=/home/bjoern/Dokumente/python_progs/CoverUp/Installer_AppDir-Linux/AppDir:$APPDIR;' >> ./AppRun.env
-      echo -E 'APPDIR_LIBC_LINKER_PATH={'lib64/ld-linux-x86-64.so.2'}' >> ./AppRun.env
+      # Create desktop file
+      mkdir -p $CRAFT_PART_INSTALL/share/applications
+      cat > $CRAFT_PART_INSTALL/share/applications/coverup.desktop << 'EOF'
+      [Desktop Entry]
+      Name=CoverUP PDF
+      GenericName=PDF Redaction Tool
+      Comment=Redact sensitive information in PDFs and images
+      Exec=coverup %f
+      Icon=${SNAP}/share/icons/coverup.svg
+      Terminal=false
+      Type=Application
+      Categories=Office;Utility;Graphics;
+      MimeType=application/pdf;image/png;image/jpeg;
+      StartupNotify=true
+      Keywords=pdf;redact;privacy;censor;black;bar;
+      EOF
 
-      echo -E '[Desktop Entry]' >> coverup.desktop
-      echo -E 'Name=CoverUP' >> coverup.desktop
-      echo -E 'GenericName=PDF Redaction Software' >> coverup.desktop
-      echo -E 'Comment=Overlay PDF with black bars' >> coverup.desktop
-      echo -E 'Exec=coverup' >> coverup.desktop
-      echo -E 'Icon=usr/bin/app/coverup.svg' >> coverup.desktop
-      echo -E 'Terminal=false' >> coverup.desktop
-      echo -E 'Type=Application' >> coverup.desktop
-      echo -E 'Categories=Utility;' >> coverup.desktop
-      echo -E 'StartupNotify=true' >> coverup.desktop  
-
-      rm ./runtime/compat/usr/bin/env 
-      rm ./runtime/compat/usr/local/bin/python
-      rm ./runtime/default/usr/bin/env
-      rm ./runtime/default/usr/local/bin/python 
-
-      mkdir -p $CRAFT_PART_INSTALL/usr/bin/app
-      mv ./* $CRAFT_PART_INSTALL/usr/bin/app
-      
+      # Create icon directory and copy icon
+      mkdir -p $CRAFT_PART_INSTALL/share/icons
+      if [ -f $CRAFT_PART_SRC/CoverUP.ico ]; then
+        cp $CRAFT_PART_SRC/CoverUP.ico $CRAFT_PART_INSTALL/share/icons/coverup.ico
+      fi
+      if [ -f $CRAFT_PART_SRC/CoverUP.svg ]; then
+        cp $CRAFT_PART_SRC/CoverUP.svg $CRAFT_PART_INSTALL/share/icons/coverup.svg
+      fi
