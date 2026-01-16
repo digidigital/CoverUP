@@ -161,6 +161,12 @@ def main():
         location=(0, 0)
     )
 
+    # Set WM_CLASS for proper taskbar icon matching (Linux/Flatpak)
+    try:
+        window.TKroot.wm_class('coverup', 'coverup')
+    except Exception:
+        pass  # Ignore on non-Linux platforms
+
     # Detect changes of window size
     frame_id = window['-GRAPH_COLUMN-'].Widget.frame_id
     canvas = window['-GRAPH_COLUMN-'].Widget.canvas
