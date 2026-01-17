@@ -43,10 +43,6 @@ Visit the [CoverUP PDF Microsite](https://coverup.digidigital.de) - This softwar
 sudo snap install coverup
 ```
 
-### ~~Linux - Flatpak~~
-
-~~flatpak install flathub de.digidigital.coverup~~
-
 ### Python Package (pip)
 
 ```bash
@@ -186,10 +182,6 @@ Ob Sie mit einer einzelnen Seite oder einem gesamten Dokument arbeiten, **CoverU
 ```bash
 sudo snap install coverup
 ```
-
-### ~~Linux - Flatpak~~
-
-~~flatpak install flathub de.digidigital.coverup~~
 
 ### Python-Paket (pip)
 
