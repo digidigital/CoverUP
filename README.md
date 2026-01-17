@@ -116,19 +116,6 @@ python -m build
 twine upload dist/*
 ```
 
-#### Snap
-
-```bash
-# Install snapcraft
-sudo snap install snapcraft --classic
-
-# Build the snap
-snapcraft
-
-# Install locally for testing
-sudo snap install coverup_*.snap --dangerous
-```
-
 #### Windows (PyInstaller)
 
 ```bash
