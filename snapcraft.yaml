@@ -16,11 +16,17 @@ description: |
   - Password-protected PDF support
   - Command-line file opening support
 
-version: '0.4.0'
+adopt-info: coverup
 license: GPL-3.0
 grade: stable
 confinement: strict
 base: core24
+
+contact: mailto:support@digidigital.de
+website: https://coverup.digidigital.de
+source-code: https://github.com/digidigital/CoverUP
+issues: https://github.com/digidigital/CoverUP/issues
+donation: https://buymeacoffee.com/digidigital
 
 platforms:
   amd64:
@@ -29,9 +35,13 @@ platforms:
 
 apps:
   coverup:
-    command: bin/coverup
+    command: coverup/coverup
     desktop: share/applications/coverup.desktop
-    extensions: [gnome]
+    environment:
+      FONTCONFIG_PATH: $SNAP/etc/fonts
+      XDG_DATA_DIRS: $SNAP/usr/share:$XDG_DATA_DIRS
+      GDK_SCALE: $GDK_SCALE
+      GDK_DPI_SCALE: $GDK_DPI_SCALE
     plugs:
       - home
       - removable-media
@@ -42,28 +52,74 @@ apps:
 
 parts:
   coverup:
-    plugin: python
+    plugin: nil
     source: https://github.com/digidigital/CoverUP.git
     source-type: git
-    source-tag: v0.4.0
-    python-requirements:
-      - requirements.txt
-    stage-packages:
+    source-tag: v0.4.1
+
+    build-packages:
+      - python3
+      - python3-venv
+      - python3-pip
       - python3-tk
       - python3-pil
       - python3-pil.imagetk
-      - libxcb-xtest0
-      - libpython3.12-stdlib
-      - libpython3.12-minimal
-    build-packages:
-      - python3-dev
-      - python3-pip
-      - python3-setuptools
-      - python3-venv
-    override-build: |
-      craftctl default
+      - tk
+      - tcl
+      - build-essential
+      - libssl-dev
+      - libffi-dev
+      - pkg-config
+      - zenity
 
-      # Create desktop file
+    stage-packages:
+      - libx11-6
+      - libxext6
+      - libxrender1
+      - libxcb1
+      - libxau6
+      - libxdmcp6
+      - fontconfig
+      - fonts-dejavu-core
+      - fonts-dejavu-extra
+      - fonts-noto-core
+
+    override-build: |
+      set -euo pipefail
+
+      # Set version from git tag (strips leading 'v' if present)
+      craftctl set version="$(git describe --tags --abbrev=0 | sed 's/^v//')"
+
+      # keep default behavior for any craftctl-based flows
+      craftctl default || true
+
+      # Create and use a venv to avoid PEP 668 restrictions
+      VENV=$CRAFT_PART_BUILD/venv
+      python3 -m venv "$VENV"
+      "$VENV/bin/python" -m pip install --upgrade pip setuptools wheel
+
+      # Install PyInstaller (>=5.0.0) and project dependencies into the venv
+      "$VENV/bin/python" -m pip install "pyinstaller>=5.0.0"
+      # Install the project into the venv so PyInstaller can find package metadata
+      "$VENV/bin/python" -m pip install .
+
+      # Build with PyInstaller in onedir mode (preserves _internal layout for >=5.0.0)
+      "$VENV/bin/python" -m PyInstaller --noconfirm --onedir --name coverup CoverUP.py
+
+      # Copy the PyInstaller output directory into the part install area
+      mkdir -p $CRAFT_PART_INSTALL/coverup
+      cp -r dist/coverup/* $CRAFT_PART_INSTALL/coverup/
+
+      # Ensure the main binary is executable
+      if [ -f $CRAFT_PART_INSTALL/coverup/coverup ]; then
+        chmod +x $CRAFT_PART_INSTALL/coverup/coverup
+      fi
+
+      # Copy host fontconfig data so fontconfig inside the snap uses the same rules
+      mkdir -p $CRAFT_PART_INSTALL/etc/fonts
+      cp -r /etc/fonts/* $CRAFT_PART_INSTALL/etc/fonts/ || true
+
+      # Desktop file
       mkdir -p $CRAFT_PART_INSTALL/share/applications
       cat > $CRAFT_PART_INSTALL/share/applications/coverup.desktop << 'EOF'
       [Desktop Entry]
@@ -80,11 +136,14 @@ parts:
       Keywords=pdf;redact;privacy;censor;black;bar;
       EOF
 
-      # Create icon directory and copy icon
+      # Icons
       mkdir -p $CRAFT_PART_INSTALL/share/icons
-      if [ -f $CRAFT_PART_SRC/CoverUP.ico ]; then
-        cp $CRAFT_PART_SRC/CoverUP.ico $CRAFT_PART_INSTALL/share/icons/coverup.ico
-      fi
-      if [ -f $CRAFT_PART_SRC/CoverUP.svg ]; then
-        cp $CRAFT_PART_SRC/CoverUP.svg $CRAFT_PART_INSTALL/share/icons/coverup.svg
-      fi
+      cp CoverUP.svg $CRAFT_PART_INSTALL/share/icons/coverup.svg || true
+      cp CoverUP.ico $CRAFT_PART_INSTALL/share/icons/coverup.ico || true
+
+    override-prime: |
+      craftctl default || true
+      # Remove BLT if present to silence lint warnings
+      rm -f $CRAFT_PRIME/usr/lib/libBLTlite* || true
+      # Remove libXfixes if it was pulled in transitively to silence the linter
+      rm -f $CRAFT_PRIME/usr/lib/x86_64-linux-gnu/libXfixes.so.3* || true

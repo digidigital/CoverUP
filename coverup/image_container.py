@@ -132,6 +132,23 @@ class ImageContainer:
         # List of rectangles: [(start_coords, end_coords, color, graph_id), ...]
         self.rectangles = list() if rectangles is None else rectangles
 
+    def close(self):
+        """Release all image resources held by this container."""
+        # Close scaled image if it's different from original
+        if self.scaled_image is not None and self.scaled_image is not self.image:
+            try:
+                self.scaled_image.close()
+            except Exception:
+                pass
+            self.scaled_image = None
+        # Close the original image
+        if self.image is not None:
+            try:
+                self.image.close()
+            except Exception:
+                pass
+            self.image = None
+
     def increase_zoom(self, number=20):
         """Zoom in on the image. Returns new zoom_factor."""
         ImageContainer.zoom_factor += number
@@ -244,6 +261,14 @@ class ImageContainer:
 
     def draw_rectangles_on_graph(self, window):
         """Draw all rectangles in the rectangles list to the graph in the correct scale."""
+        # Delete old graph figures before redrawing to prevent accumulation
+        for rectangle in self.rectangles:
+            if rectangle[3] is not None:
+                try:
+                    window['-GRAPH-'].delete_figure(rectangle[3])
+                except Exception:
+                    pass
+
         new_rectangles = list()
 
         for rectangle in self.rectangles:
@@ -315,6 +340,30 @@ def export_rectangles(pages):
             return None
     except (AttributeError, TypeError):
         return None
+
+
+def close_all_pages(pages):
+    """
+    Close all ImageContainer instances and release their image resources.
+
+    Call this before loading a new document to prevent memory leaks.
+
+    Args:
+        pages: List of ImageContainer instances.
+    """
+    if not pages:
+        return
+
+    for page in pages:
+        if hasattr(page, 'close'):
+            try:
+                page.close()
+            except Exception:
+                pass
+
+    # Clear the list
+    pages.clear()
+    gc.collect()
 
 
 def delete_all_rectangles(pages, delete_workfile_func):

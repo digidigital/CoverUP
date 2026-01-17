@@ -20,7 +20,7 @@ from fpdf import FPDF
 from appdirs import user_data_dir
 
 from coverup import __version__
-from coverup.image_container import ImageContainer, delete_all_rectangles, finalize_pages_chunked
+from coverup.image_container import ImageContainer, delete_all_rectangles, finalize_pages_chunked, close_all_pages
 from coverup.document_loader import load_document
 from coverup.workfile import WorkfileManager
 from coverup.ui import (
@@ -179,6 +179,11 @@ def main():
             window['-GRAPH-'].set_cursor('watch')
             window.refresh()
 
+            # Erase graph and close existing images before loading new document
+            window['-GRAPH-'].erase()
+            close_all_pages(images)
+            gc.collect()
+
             ImageContainer.zoom_factor = 100
             images, file_path, current_page, new_fill_color, new_output_quality = load_document(
                 cli_file_path, import_ppi, window, workfile_manager
@@ -264,6 +269,11 @@ def main():
                     window.set_cursor('watch')
                     window['-GRAPH-'].set_cursor('watch')
                     window.refresh()
+
+                    # Erase graph and close existing images before loading new document
+                    window['-GRAPH-'].erase()
+                    close_all_pages(images)
+                    gc.collect()
 
                     ImageContainer.zoom_factor = 100
                     images, file_path, current_page, new_fill_color, new_output_quality = load_document(

@@ -5,6 +5,7 @@ This module handles loading PDF and image files, with optional multiprocessing
 support for faster PDF page rendering on multi-core systems.
 """
 
+import gc
 import io
 import os
 from concurrent.futures import ProcessPoolExecutor, wait as wait_futures
@@ -32,6 +33,10 @@ def _render_pdf_page(args):
         Tuple of (page_index, image_bytes, page_size) where image_bytes is PNG data.
     """
     file_path, page_index, scale, password = args
+    pdf = None
+    page = None
+    pil_image = None
+    buffer = None
     try:
         if password:
             pdf = pdfium.PdfDocument(file_path, password=password)
@@ -43,7 +48,6 @@ def _render_pdf_page(args):
         page_size = page.get_size()
 
         # Convert PIL image to bytes for pickling
-        import io
         buffer = io.BytesIO()
         pil_image.save(buffer, format='JPEG')
         image_bytes = buffer.getvalue()
@@ -51,6 +55,28 @@ def _render_pdf_page(args):
         return (page_index, image_bytes, page_size)
     except Exception as e:
         return (page_index, None, str(e))
+    finally:
+        # Ensure all resources are released
+        if buffer is not None:
+            try:
+                buffer.close()
+            except Exception:
+                pass
+        if pil_image is not None:
+            try:
+                pil_image.close()
+            except Exception:
+                pass
+        if page is not None:
+            try:
+                page.close()
+            except Exception:
+                pass
+        if pdf is not None:
+            try:
+                pdf.close()
+            except Exception:
+                pass
 
 
 def load_document(load_file_path, import_ppi, window, workfile_manager, show_restore_prompt=True):
@@ -120,6 +146,11 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
             raise ValueError(_('error_pdf_open_failed'))
 
         total_pages = len(pdf)
+        # Close the PDF document now - we only needed it for page count
+        # Worker processes will open their own handles
+        pdf.close()
+        pdf = None
+
         window['-PAGE_TOTAL-'].update(total_pages)
         scale = int(import_ppi / 72)
 
@@ -136,29 +167,55 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
         results = [None] * total_pages
         completed = 0
 
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(_render_pdf_page, args): args[1] for args in render_args}
-            pending = set(futures.keys())
+        try:
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                futures = {executor.submit(_render_pdf_page, args): args[1] for args in render_args}
+                pending = set(futures.keys())
 
-            # Poll for completed futures with timeout to keep GUI responsive
-            while pending:
-                # Use short timeout to allow GUI updates
-                done, pending = wait_futures(pending, timeout=0.05)
+                # Poll for completed futures with timeout to keep GUI responsive
+                while pending:
+                    # Use short timeout to allow GUI updates
+                    done, pending = wait_futures(pending, timeout=0.05)
 
-                for future in done:
-                    result = future.result()
+                    for future in done:
+                        result = future.result()
+                        page_idx, image_bytes, page_size = result
 
-                    if result[1] is None:
-                        # Error occurred
-                        raise ValueError(_('error_page_render_failed', page=result[0] + 1, error=result[2]))
+                        if image_bytes is None:
+                            # Error occurred - page_size contains error message
+                            raise ValueError(_('error_page_render_failed', page=page_idx + 1, error=page_size))
 
-                    # Convert bytes back to PIL Image
-                    pil_image = Image.open(io.BytesIO(result[1]))
-                    results[result[0]] = ImageContainer(pil_image, result[2])
+                        # Convert bytes back to PIL Image
+                        img_buffer = io.BytesIO(image_bytes)
+                        pil_image = Image.open(img_buffer)
+                        # Load image data into memory so buffer can be closed
+                        pil_image.load()
+                        img_buffer.close()
+                        results[page_idx] = ImageContainer(pil_image, page_size)
 
-                    completed += 1
-                    window['-PROGRESS-'].update(current_count=int(completed * 100 / total_pages))
-                    window.refresh()
+                        # Release references to allow GC
+                        del image_bytes
+                        del result
+
+                        completed += 1
+                        window['-PROGRESS-'].update(current_count=int(completed * 100 / total_pages))
+                        window.refresh()
+
+                # Clear futures dict to release any remaining references
+                del futures
+        except Exception:
+            # Clean up any partially loaded images on error
+            for img_container in results:
+                if img_container is not None and hasattr(img_container, 'close'):
+                    try:
+                        img_container.close()
+                    except Exception:
+                        pass
+            raise
+
+        # Clear render_args and force GC before returning
+        del render_args
+        gc.collect()
 
         images_list = results
 
@@ -166,40 +223,40 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
     elif load_file_path.lower().endswith(('.jpg', '.jpeg', '.png')):
         window['-PAGE_TOTAL-'].update(1)
         import_image = Image.open(load_file_path, mode='r')
+        try:
+            # Fit large images ppi-wise in DIN A4 format with about import_ppi dpi
+            width, height = import_image.size
 
-        # Fit large images ppi-wise in DIN A4 format with about import_ppi dpi
-        width, height = import_image.size
+            a4_short_side = round(8.267 * import_ppi)
+            a4_long_side = round(11.693 * import_ppi)
 
-        a4_short_side = round(8.267 * import_ppi)
-        a4_long_side = round(11.693 * import_ppi)
+            # Portrait
+            if height >= width:
+                if width/height >= 210/297:
+                    # A4 portrait or short side longer
+                    scale_factor = a4_short_side / width
+                else:
+                    # A4 portrait long side longer
+                    scale_factor = a4_long_side / height
 
-        # Portrait
-        if height >= width:
-            if width/height >= 210/297:
-                # A4 portrait or short side longer
-                scale_factor = a4_short_side / width
+            # Landscape
             else:
-                # A4 portrait long side longer
-                scale_factor = a4_long_side / height
+                if width/height >= 297/210:
+                    # A4 landscape or long side longer
+                    scale_factor = a4_long_side / width
+                else:
+                    # A4 landscape short side longer
+                    scale_factor = a4_short_side / height
 
-        # Landscape
-        else:
-            if width/height >= 297/210:
-                # A4 landscape or long side longer
-                scale_factor = a4_long_side / width
+            # Scale images larger than A4 at import_ppi only
+            if scale_factor < 1:
+                width = int(width * scale_factor)
+                height = int(height * scale_factor)
+                new_image = import_image.resize((width, height), resample=Image.Resampling.LANCZOS)
             else:
-                # A4 landscape short side longer
-                scale_factor = a4_short_side / height
-
-        # Scale images larger than A4 at import_ppi only
-        if scale_factor < 1:
-            width = int(width * scale_factor)
-            height = int(height * scale_factor)
-            new_image = import_image.resize((width, height), resample=Image.Resampling.LANCZOS)
-        else:
-            new_image = import_image.copy()
-
-        import_image.close()
+                new_image = import_image.copy()
+        finally:
+            import_image.close()
 
         # pagesize in ppi @ 72 ppi for pdf output
         width_ppi = int(width/import_ppi*72)
