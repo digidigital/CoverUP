@@ -43,11 +43,9 @@ Visit the [CoverUP PDF Microsite](https://coverup.digidigital.de) - This softwar
 sudo snap install coverup
 ```
 
-### Linux - Flatpak
+### ~~Linux - Flatpak~~
 
-```bash
-flatpak install flathub de.digidigital.coverup
-```
+~~flatpak install flathub de.digidigital.coverup~~
 
 ### Python Package (pip)
 
@@ -122,20 +120,6 @@ python -m build
 twine upload dist/*
 ```
 
-#### Flatpak
-
-```bash
-# Install flatpak-builder
-sudo apt install flatpak-builder
-
-# Build locally
-cd flatpak
-flatpak-builder --force-clean build-dir de.digidigital.coverup.yml
-
-# Test the build
-flatpak-builder --run build-dir de.digidigital.coverup.yml coverup
-```
-
 #### Snap
 
 ```bash
@@ -203,11 +187,9 @@ Ob Sie mit einer einzelnen Seite oder einem gesamten Dokument arbeiten, **CoverU
 sudo snap install coverup
 ```
 
-### Linux - Flatpak
+### ~~Linux - Flatpak~~
 
-```bash
-flatpak install flathub de.digidigital.coverup
-```
+~~flatpak install flathub de.digidigital.coverup~~
 
 ### Python-Paket (pip)
 
