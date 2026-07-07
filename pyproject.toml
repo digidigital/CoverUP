@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "coverup-pdf"
-version = "0.4.2"
+version = "0.8.3"
 description = "A tool for redacting PDF files and images"
 readme = "README.md"
 license = {text = "GPL-3.0"}
@@ -37,6 +37,7 @@ dependencies = [
     "Pillow>=10.0.0",
     "fpdf2>=2.7.0",
     "appdirs>=1.4.4",
+    "pytesseract>=0.3.10",
 ]
 
 [project.optional-dependencies]

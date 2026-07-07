@@ -10,5 +10,6 @@ from PyInstaller.utils.hooks import collect_data_files
 # Collect data files from the coverup package (includes fonts directory)
 datas = collect_data_files('coverup')
 
-# Hidden imports that PyInstaller might miss
-hiddenimports = ['PIL', 'tkinter']
+# Hidden imports that PyInstaller might miss. pytesseract is imported lazily
+# inside coverup.ocr, so list it explicitly to be safe.
+hiddenimports = ['PIL', 'tkinter', 'pytesseract']

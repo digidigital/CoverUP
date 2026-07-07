@@ -139,8 +139,8 @@ modules:
       - install -Dm644 coverup/LICENSE ${FLATPAK_DEST}/share/licenses/de.digidigital.coverup/LICENSE
     sources:
       - type: git
-        url: https://github.com/digidigital/CoverUP.git
-        tag: v0.4.0
+        url: https://github.com/raulgonzalez-sys/CoverUP.git
+        tag: v0.8.0
         dest: coverup
       - type: file
         path: de.digidigital.coverup.desktop

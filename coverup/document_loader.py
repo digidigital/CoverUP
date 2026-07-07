@@ -4,16 +4,13 @@ Document loading functionality for CoverUP PDF.
 This module handles loading PDF and image files, with optional multiprocessing
 support for faster PDF page rendering on multi-core systems.
 """
-
 import gc
 import io
 import os
 from concurrent.futures import ProcessPoolExecutor, wait as wait_futures
-
 import FreeSimpleGUI as sg
 import pypdfium2 as pdfium
 from PIL import Image
-
 from coverup.image_container import ImageContainer
 from coverup.utils import is_valid_file_type, get_worker_count
 from coverup.i18n import _
@@ -42,21 +39,16 @@ def _render_pdf_page(args):
             pdf = pdfium.PdfDocument(file_path, password=password)
         else:
             pdf = pdfium.PdfDocument(file_path)
-
         page = pdf[page_index]
         pil_image = page.render(scale=scale).to_pil()
         page_size = page.get_size()
-
-        # Convert PIL image to bytes for pickling
         buffer = io.BytesIO()
         pil_image.save(buffer, format='JPEG')
         image_bytes = buffer.getvalue()
-
         return (page_index, image_bytes, page_size)
     except Exception as e:
         return (page_index, None, str(e))
     finally:
-        # Ensure all resources are released
         if buffer is not None:
             try:
                 buffer.close()
@@ -110,31 +102,27 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
     new_fill_color = None
     new_output_quality = None
 
-    # Import PDF files
     if load_file_path.lower().endswith('.pdf'):
         pdf = None
-        pdf_password = None  # Track password for multiprocessing
+        pdf_password = None
 
-        # Try to open the PDF, handle encrypted files
         try:
             pdf = pdfium.PdfDocument(load_file_path)
         except pdfium.PdfiumError as e:
-            # Check if the error is due to password protection
-            if "password" in str(e).lower() or "encrypted" in str(e).lower():
-                # Prompt for password
+            if 'password' in str(e).lower() or 'encrypted' in str(e).lower():
                 win_loc_x, win_loc_y = window.current_location()
                 win_w, win_h = window.current_size_accurate()
                 password = sg.popup_get_text(
                     _('password_prompt'),
                     title=_('password_title'),
-                    location=(win_loc_x + win_w/2 - 150, win_loc_y + win_h/2 - 75),
+                    location=(win_loc_x + win_w / 2 - 150, win_loc_y + win_h / 2 - 75),
                     keep_on_top=True,
                     password_char='*'
                 )
                 if password:
                     try:
                         pdf = pdfium.PdfDocument(load_file_path, password=password)
-                        pdf_password = password  # Store for multiprocessing
+                        pdf_password = password
                     except pdfium.PdfiumError:
                         raise ValueError(_('error_incorrect_password'))
                 else:
@@ -146,24 +134,14 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
             raise ValueError(_('error_pdf_open_failed'))
 
         total_pages = len(pdf)
-        # Close the PDF document now - we only needed it for page count
-        # Worker processes will open their own handles
         pdf.close()
         pdf = None
 
         window['-PAGE_TOTAL-'].update(total_pages)
         scale = int(import_ppi / 72)
-
-        # Use cores-1 workers (leaves one core for UI), limited by page count
         max_workers = get_worker_count(max_tasks=total_pages)
 
-        # Prepare arguments for worker processes
-        render_args = [
-            (load_file_path, i, scale, pdf_password)
-            for i in range(total_pages)
-        ]
-
-        # Pre-allocate list to maintain page order
+        render_args = [(load_file_path, i, scale, pdf_password) for i in range(total_pages)]
         results = [None] * total_pages
         completed = 0
 
@@ -171,40 +149,32 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 futures = {executor.submit(_render_pdf_page, args): args[1] for args in render_args}
                 pending = set(futures.keys())
-
-                # Poll for completed futures with timeout to keep GUI responsive
                 while pending:
-                    # Use short timeout to allow GUI updates
                     done, pending = wait_futures(pending, timeout=0.05)
-
                     for future in done:
                         result = future.result()
                         page_idx, image_bytes, page_size = result
-
                         if image_bytes is None:
-                            # Error occurred - page_size contains error message
                             raise ValueError(_('error_page_render_failed', page=page_idx + 1, error=page_size))
-
-                        # Convert bytes back to PIL Image
                         img_buffer = io.BytesIO(image_bytes)
                         pil_image = Image.open(img_buffer)
-                        # Load image data into memory so buffer can be closed
                         pil_image.load()
                         img_buffer.close()
-                        results[page_idx] = ImageContainer(pil_image, page_size)
-
-                        # Release references to allow GC
+                        results[page_idx] = ImageContainer(
+                            pil_image, page_size,
+                            source_path=load_file_path, page_index=page_idx,
+                            render_scale=scale, password=pdf_password
+                        )
                         del image_bytes
                         del result
-
                         completed += 1
                         window['-PROGRESS-'].update(current_count=int(completed * 100 / total_pages))
                         window.refresh()
-
-                # Clear futures dict to release any remaining references
                 del futures
+            del render_args
+            gc.collect()
+            images_list = results
         except Exception:
-            # Clean up any partially loaded images on error
             for img_container in results:
                 if img_container is not None and hasattr(img_container, 'close'):
                     try:
@@ -213,42 +183,26 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
                         pass
             raise
 
-        # Clear render_args and force GC before returning
-        del render_args
-        gc.collect()
-
-        images_list = results
-
-    # Import single images
-    elif load_file_path.lower().endswith(('.jpg', '.jpeg', '.png')):
+    elif load_file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.tif', '.tiff')):
         window['-PAGE_TOTAL-'].update(1)
         import_image = Image.open(load_file_path, mode='r')
         try:
-            # Fit large images ppi-wise in DIN A4 format with about import_ppi dpi
             width, height = import_image.size
 
             a4_short_side = round(8.267 * import_ppi)
             a4_long_side = round(11.693 * import_ppi)
 
-            # Portrait
             if height >= width:
-                if width/height >= 210/297:
-                    # A4 portrait or short side longer
+                if width / height >= 0.7070707070707071:
                     scale_factor = a4_short_side / width
                 else:
-                    # A4 portrait long side longer
                     scale_factor = a4_long_side / height
-
-            # Landscape
             else:
-                if width/height >= 297/210:
-                    # A4 landscape or long side longer
+                if width / height >= 1.4142857142857144:
                     scale_factor = a4_long_side / width
                 else:
-                    # A4 landscape short side longer
                     scale_factor = a4_short_side / height
 
-            # Scale images larger than A4 at import_ppi only
             if scale_factor < 1:
                 width = int(width * scale_factor)
                 height = int(height * scale_factor)
@@ -258,35 +212,32 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
         finally:
             import_image.close()
 
-        # pagesize in ppi @ 72 ppi for pdf output
-        width_ppi = int(width/import_ppi*72)
-        height_ppi = int(height/import_ppi*72)
+        width_ppi = int(width / import_ppi * 72)
+        height_ppi = int(height / import_ppi * 72)
+        images_list.append(ImageContainer(
+            new_image, (width_ppi, height_ppi),
+            source_path=load_file_path, page_index=0, render_scale=1
+        ))
 
-        images_list.append(ImageContainer(new_image, (width_ppi, height_ppi)))
-
-    # Set file_path for workfile functions
     workfile_manager.set_file_path(load_file_path)
-
-    # Check for previous work session
     work_data = workfile_manager.load()
+
     if show_restore_prompt and work_data and work_data['pages'] == len(images_list):
         win_loc_x, win_loc_y = window.current_location()
         win_w, win_h = window.current_size_accurate()
         result = sg.popup_ok_cancel(
             _('confirm_restore_session'),
             no_titlebar=True,
-            location=(win_loc_x+win_w/2-185, win_loc_y+win_h/2-200),
+            location=(win_loc_x + win_w / 2 - 185, win_loc_y + win_h / 2 - 200),
             keep_on_top=True,
             background_color='silver',
             button_color='grey'
         )
+
         try:
             if result == 'OK':
                 for rectangles, page in zip(work_data['rectangles'], images_list):
-                    page.rectangles = [
-                        [tuple(rectangle[0]), tuple(rectangle[1]), rectangle[2], rectangle[3]]
-                        for rectangle in rectangles
-                    ]
+                    page.rectangles = [[tuple(rectangle[0]), tuple(rectangle[1]), rectangle[2], rectangle[3]] for rectangle in rectangles]
                 loaded_page = int(work_data['current_page'])
                 new_fill_color = work_data['fill_color']
                 new_output_quality = work_data['output_quality']
@@ -295,4 +246,4 @@ def load_document(load_file_path, import_ppi, window, workfile_manager, show_res
         except Exception:
             pass
 
-    return images_list, load_file_path, loaded_page, new_fill_color, new_output_quality
+    return (images_list, load_file_path, loaded_page, new_fill_color, new_output_quality)

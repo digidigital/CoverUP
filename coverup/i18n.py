@@ -9,12 +9,9 @@ Usage:
     from coverup.i18n import _
     translated_text = _('key_name')
 """
-
 import locale
-
 from coverup.translations import TRANSLATIONS
 
-# Current language (set once at startup)
 _current_lang = 'en'
 
 
@@ -27,13 +24,11 @@ def get_system_locale():
              Defaults to 'en' if detection fails.
     """
     try:
-        # Try to get the system locale
         loc = locale.getdefaultlocale()[0]
         if loc:
-            # Extract language code (first two characters)
             return loc[:2].lower()
     except Exception:
-        pass
+        return 'en'
     return 'en'
 
 
@@ -45,11 +40,8 @@ def init_language(lang=None):
         lang: Optional language code (e.g., 'en', 'de'). If None, auto-detects.
     """
     global _current_lang
-
     if lang is None:
         lang = get_system_locale()
-
-    # Fall back to English if language not available
     if lang in TRANSLATIONS:
         _current_lang = lang
     else:
@@ -79,18 +71,13 @@ def _(key, **kwargs):
     """
     translations = TRANSLATIONS.get(_current_lang, TRANSLATIONS['en'])
     text = translations.get(key)
-
     if text is None:
-        # Fall back to English
         text = TRANSLATIONS['en'].get(key, key)
-
-    # Apply format arguments if provided
     if kwargs:
         try:
             text = text.format(**kwargs)
         except (KeyError, ValueError):
             pass
-
     return text
 
 
@@ -111,5 +98,5 @@ def _plural(key_singular, key_plural, count, **kwargs):
     return _(key, count=count, **kwargs)
 
 
-# Initialize with system locale on import
+# Auto-detect and initialize the language on import
 init_language()

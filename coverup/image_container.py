@@ -113,7 +113,8 @@ class ImageContainer:
 
     zoom_factor = 100
 
-    def __init__(self, image, size=(0, 0), rectangles=None):
+    def __init__(self, image, size=(0, 0), rectangles=None,
+                 source_path=None, page_index=0, render_scale=1, password=None):
         """
         Initialize an ImageContainer.
 
@@ -121,6 +122,13 @@ class ImageContainer:
             image: PIL Image object for this page.
             size: Tuple of (height_pt, width_pt) for PDF dimensions.
             rectangles: Optional list of existing rectangles.
+            source_path: Path to the source document (PDF/image), used by the
+                automatic detection feature to read the digital text layer.
+            page_index: 0-based index of this page within the source document.
+            render_scale: Pixels-per-PDF-point used when this page was
+                rasterised (lets detection map text-layer points to image
+                pixels). 1 for imported images.
+            password: Password for the source PDF, if it was encrypted.
         """
         self.image = image
         self.size = size
@@ -129,8 +137,15 @@ class ImageContainer:
         self.scaled_image = self.image
         self.id = None
 
+        # Provenance for automatic detection (digital text-layer lookup).
+        self.source_path = source_path
+        self.page_index = page_index
+        self.render_scale = render_scale
+        self.password = password
+
         # List of rectangles: [(start_coords, end_coords, color, graph_id), ...]
         self.rectangles = list() if rectangles is None else rectangles
+        self.redo_stack = list()
 
     def close(self):
         """Release all image resources held by this container."""
@@ -181,10 +196,38 @@ class ImageContainer:
         self.scaled_image = self.image.resize((newwidth, newheight), resample=Image.Resampling.BILINEAR)
 
     def undo(self, window):
-        """Go back in history. Remove last rectangle and redraw rectangles."""
+        """Remove the last rectangle and push it onto the redo stack."""
         if len(self.rectangles) > 0:
-            delete_id = self.rectangles.pop()
-            window['-GRAPH-'].delete_figure(delete_id[3])
+            removed = self.rectangles.pop()
+            try:
+                window['-GRAPH-'].delete_figure(removed[3])
+            except Exception:
+                pass
+            self.redo_stack.append((removed[0], removed[1], removed[2]))
+        return self
+
+    def redo(self, window):
+        """Restore the most recently undone rectangle on the current page.
+
+        Only valid while this page is the one shown on the Graph (the figure is
+        drawn at the current zoom). Pairs with :meth:`undo`.
+        """
+        if self.redo_stack:
+            start_orig, end_orig, fill = self.redo_stack.pop()
+            factor = ImageContainer.zoom_factor / 100
+            scaled_start = [int(x * factor) for x in start_orig]
+            scaled_end = [int(x * factor) for x in end_orig]
+            try:
+                rectangle_id = window['-GRAPH-'].draw_rectangle(
+                    (scaled_start[0], -scaled_start[1]),
+                    (scaled_end[0], -scaled_end[1]),
+                    fill_color=fill,
+                    line_color=fill,
+                    line_width=None
+                )
+            except ValueError:
+                rectangle_id = None
+            self.rectangles.append((tuple(start_orig), tuple(end_orig), fill, rectangle_id))
         return self
 
     def data(self):
@@ -290,7 +333,14 @@ class ImageContainer:
         self.rectangles = new_rectangles
 
     def draw_rectangle(self, window, start_point, end_point, fill='black'):
-        """Draw a rectangle on graph and add it to the rectangles list."""
+        """Draw a rectangle on graph and add it to the rectangles list.
+
+        Returns:
+            Tuple (start_point_in_original, end_point_in_original) in original
+            image coordinates, or (None, None) if the rectangle could not be
+            created. The original coordinates can be replicated onto other pages
+            via :meth:`add_rectangle`.
+        """
         try:
             factor = ImageContainer.zoom_factor / 100
 
@@ -311,9 +361,22 @@ class ImageContainer:
                 line_width=None
             )
             self.rectangles.append((start_point_in_original, end_point_in_original, fill, rectangle_id))
+            self.redo_stack.clear()
+            return (start_point_in_original, end_point_in_original)
 
         except ValueError:
-            pass
+            return (None, None)
+
+    def add_rectangle(self, start_point_original, end_point_original, fill='black'):
+        """Add a redaction rectangle in original-image coordinates.
+
+        Unlike :meth:`draw_rectangle`, this does not draw on the Graph element,
+        so it is safe to call for pages that are not currently displayed. The
+        rectangle is stored with a ``None`` graph id; the figure is created the
+        next time the page is shown via :meth:`draw_rectangles_on_graph`.
+        """
+        self.rectangles.append((tuple(start_point_original), tuple(end_point_original), fill, None))
+        self.redo_stack.clear()
         return self
 
 

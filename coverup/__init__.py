@@ -1,4 +1,4 @@
-"""
+'''
 CoverUP PDF - A tool for redacting PDF files and images.
 
 CoverUP is a privacy-focused tool for redacting sensitive information in PDF
@@ -27,10 +27,13 @@ Example usage:
     # Or from command line:
     $ coverup document.pdf
     $ python -m coverup
-"""
-
-__version__ = "0.4.2"
-__author__ = "Björn Seipel"
-__email__ = "support@digidigital.de"
-__license__ = "GPL-3.0"
-__all__ = ["__version__", "__author__", "__email__", "__license__"]
+'''
+__version__ = '0.8.3'
+__author__ = 'Björn Seipel'
+__email__ = 'support@digidigital.de'
+__license__ = 'GPL-3.0'
+__all__ = [
+    '__version__',
+    '__author__',
+    '__email__',
+    '__license__']

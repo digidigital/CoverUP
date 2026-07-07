@@ -15,7 +15,7 @@ AppDir:
 
       # Clone the repository if not already present
       if [ ! -d "CoverUP" ]; then
-        git clone --depth 1 --branch 0.4.2 https://github.com/digidigital/CoverUP.git
+        git clone --depth 1 --branch 0.8.0 https://github.com/raulgonzalez-sys/CoverUP.git
       fi
       cd CoverUP
 
@@ -48,7 +48,7 @@ AppDir:
     id: de.digidigital.coverup
     name: CoverUP PDF
     icon: coverup
-    version: 0.4.2
+    version: 0.8.0
     exec: usr/bin/coverup
     exec_args: $@
 

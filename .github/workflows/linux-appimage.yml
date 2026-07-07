@@ -1,0 +1,89 @@
+name: Linux AppImage
+
+# Builds a portable AppImage (PyInstaller bundle) from the current source and
+# attaches it to the matching GitHub release, replacing any existing one.
+# Runs on ubuntu-22.04 (older glibc) for broader distro compatibility.
+#
+# Triggers:
+#   - Pushing a version tag (e.g. 0.8.0) builds and attaches to that release.
+#   - Manual run (workflow_dispatch) lets you target an existing tag.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the AppImage to (e.g. 0.8.0)"
+        required: true
+        default: "0.8.0"
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies (Tk)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "pyinstaller>=6.0"
+          pip install .
+
+      - name: Build executable (PyInstaller)
+        run: pyinstaller --noconfirm --onedir --name coverup CoverUP.py
+
+      - name: Bundle Tesseract OCR into the app
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
+          bash packaging/bundle-tesseract.sh dist/coverup eng
+          echo "Smoke test (scrubbed env):"
+          env -u LD_LIBRARY_PATH dist/coverup/_internal/tesseract/tesseract --version
+          env -u LD_LIBRARY_PATH dist/coverup/_internal/tesseract/tesseract \
+            --tessdata-dir dist/coverup/_internal/tessdata --list-langs
+
+      - name: Download appimagetool
+        run: |
+          curl -fsSL -o appimagetool \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+
+      - name: Resolve version tag
+        id: ver
+        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build AppImage
+        env:
+          # Avoid needing FUSE on the runner.
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          APPIMAGETOOL: "./appimagetool"
+        run: bash packaging/build-appimage.sh "${{ steps.ver.outputs.tag }}" dist/coverup dist-appimage
+
+      - name: Upload AppImage as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverup-${{ steps.ver.outputs.tag }}-appimage
+          path: dist-appimage/*.AppImage
+
+      - name: Attach AppImage to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          files: dist-appimage/*.AppImage
